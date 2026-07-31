@@ -8,23 +8,9 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 
 export const metadata: Metadata = {
   title: '笔记侠 · 内容素材地图',
-  description: '把口播/访谈素材拆解成观点节点，按置信度与热点相关性排布，拖拽成稿。',
-  generator: 'v0.app',
+  description: 'AI增强内容复盘工具 — 把访谈逐字稿拆解成观点节点，按置信度与热点相关性排布，拖拽成稿。',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
+    icon: '/icon.svg',
     apple: '/apple-icon.png',
   },
 }
