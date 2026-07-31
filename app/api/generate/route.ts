@@ -21,7 +21,7 @@ const SYSTEM_PROMPT = `你是笔记侠首席撰稿人。你的任务是基于编
 
 8. **结尾回到行动**。给读者一个明天就能做的具体动作。不要"综上所述""总而言之"。
 
-9. **输出纯文本**。不要用 markdown 标记符号。`
+9. **输出纯文本**。不要使用markdown标记符号。`;
 
 const USER_TEMPLATE = `文章目标标题：%s
 素材来源：%s
@@ -38,36 +38,35 @@ const USER_TEMPLATE = `文章目标标题：%s
 5. 嘉宾称呼要有变化，不要每句都是"嘉宾A说"
 6. 结尾回到行动层面
 7. 输出纯文本，不要markdown标记
-8. 标题要有判断力`
+8. 标题要有判断力`;
 
 export async function POST(req: Request) {
   try {
     const { title, viewpoints, sections, sourceName } = await req.json()
     if (!viewpoints || !sections) return NextResponse.json({ error: "缺少数据" }, { status: 400 })
 
-    // Build section context
     let sectionCtx = ""
     for (const sec of sections) {
       if (!sec.itemIds || sec.itemIds.length === 0) continue
-      sectionCtx += `### ${sec.title}\n\n`
+      sectionCtx += "### " + sec.title + "\n\n"
       for (const vpId of sec.itemIds) {
         const vp = viewpoints.find((v: any) => v.id === vpId)
         if (!vp) continue
-        sectionCtx += `【观点】${vp.title}\n`
-        sectionCtx += `【说话人】${vp.speaker} | 时间：${vp.timestamp}\n`
-        sectionCtx += `【摘要】${vp.summary}\n`
-        sectionCtx += `【置信度】${vp.level}（${vp.confidence}%）\n`
-        sectionCtx += `【证据原文】\n`
+        sectionCtx += "【观点】" + vp.title + "\n"
+        sectionCtx += "【说话人】" + vp.speaker + " | 时间：" + (vp.timestamp || "") + "\n"
+        sectionCtx += "【摘要】" + vp.summary + "\n"
+        sectionCtx += "【置信度】" + vp.level + "（" + vp.confidence + "%）\n"
+        sectionCtx += "【证据原文】\n"
         for (const eq of (vp.evidenceQuotes || []).slice(0, 2)) {
-          sectionCtx += `  "[${eq.timestamp}] ${eq.text}" — ${eq.speaker}\n`
+          sectionCtx += "  \"[" + eq.timestamp + "] " + eq.text + "\" — " + eq.speaker + "\n"
         }
-        if (vp.editorialFlags?.factCheckNeeded) {
-          sectionCtx += `【⚠ 待核实数据，需审慎表述】${vp.editorialFlags.flagReason}\n`
+        if (vp.editorialFlags && vp.editorialFlags.factCheckNeeded) {
+          sectionCtx += "【⚠ 待核实数据，需审慎表述】" + vp.editorialFlags.flagReason + "\n"
         }
-        if (vp.editorialFlags?.needsHumanJudgment) {
-          sectionCtx += `【⚠ 需编辑判断】${vp.editorialFlags.flagReason}\n`
+        if (vp.editorialFlags && vp.editorialFlags.needsHumanJudgment) {
+          sectionCtx += "【⚠ 需编辑判断】" + vp.editorialFlags.flagReason + "\n"
         }
-        sectionCtx += `\n`
+        sectionCtx += "\n"
       }
     }
 
