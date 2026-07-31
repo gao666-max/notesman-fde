@@ -74,7 +74,7 @@ function normalizeOne(raw: any, index: number): any {
 
   let level = (raw.level || raw.confidence_level || "").toLowerCase()
   if (!level || !["high","mid","medium","low"].includes(level)) {
-    if (confidence >= 78) level = "high"
+    if (confidence >= 75) level = "high"
     else if (confidence >= 50) level = "mid"
     else level = "low"
   }
@@ -100,11 +100,20 @@ function normalizeOne(raw: any, index: number): any {
   }
 
   // Hotspot match
-  const hotspot = raw.hotspotMatch || raw.hotspot_match || raw.hotspot || {}
+  // Normalize hotness — ensure 0-100 range regardless of input format
+  let rawScore = hotspot.score ?? hotspot.relevance_score ?? hotspot.hotness_score
+  let score: number
+  if (typeof rawScore === "number") {
+    // If > 5, it's probably 0-100 scale, normalize to 0-1
+    score = rawScore > 5 ? rawScore / 100 : rawScore
+  } else {
+    score = hotness / 100
+  }
+  score = Math.min(0.99, Math.max(0.01, score))
   const hotspotMatch = {
-    matched: hotspot.matched ?? (!!hotspot.topic && hotness >= 65),
+    matched: hotspot.matched ?? (!!hotspot.topic && hotness >= 60),
     topic: hotspot.topic || hotspot.hotspot_topic || "",
-    score: hotspot.score ?? hotspot.relevance_score ?? hotness / 100,
+    score,
     reason: hotspot.reason || hotspot.match_reason || "",
   }
 
