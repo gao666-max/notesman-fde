@@ -199,7 +199,7 @@ export function localGenerateFactCheck(
 
   if (highP.length > 0) {
     lines.push(`🔴 必须确认（发稿前）：${highP.length} 项`)
-    lines.push("   涉及强数据论断和外部引用，建议逐一核实原始研究来源。涉及低置信观点的，考虑改为"据嘉宾引用的研究"或"嘉宾提出一个假设"。")
+    lines.push('   涉及强数据论断和外部引用，建议逐一核实原始研究来源。涉及低置信观点的，考虑改为“据嘉宾引用的研究”或“嘉宾提出一个假设”。')
   }
   if (midP.length > 0) {
     lines.push(`🟡 建议确认（如时间允许）：${midP.length} 项`)
