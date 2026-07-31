@@ -1,91 +1,82 @@
 import { NextResponse } from "next/server"
 import { callAgent } from "@/lib/anthropic"
 
-const SYSTEM_PROMPT = `你是笔记侠（Notesman）的资深商业内容撰稿人。你的产出不是AI生成的初稿，而是达到"编辑可以直接在此基础上精修"标准的商业深度文章。
+const SYSTEM_PROMPT = `你是笔记侠首席撰稿人。你的任务是基于编辑选定的观点节点，写出600-850字的商业深度文章。
 
-## 核心任务
-把编辑选定的一组观点节点，组织成一篇有叙事张力、有因果串联、有证据感、有阅读快感的文章。
+## 核心铁律（每条必须遵守）
 
-## 写作铁律
+1. **字数**：600-850字。少于600退回，多于850删到850以内。
 
-1. **字数**: 严格控制在 600-800 字。不要少于600，不要超过900。
+2. **标题**：必须有判断力。好的标题是"AI不会淘汰人，但会淘汰没有能动性的人"——有反常识张力、让人停下来读。不要"AI时代的生存法则""拥抱AI拥抱未来""AI时代XX能力更重要"这种公众号模板。
 
-2. **标题**: 必须有判断力，不能是中性描述。好的标题："AI不会淘汰人，但会淘汰没有能动性的人"。差的标题："关于AI与能动性的对话"。
+3. **每个章节至少展开一个自然段**。不能跳过任何编辑选定的章节。
 
-3. **开篇钩子**: 第一段必须让读者觉得"这跟我有关"。用一个反常识的观点、一个引人共鸣的场景、或一个让人停下来的提问开头。
+4. **关键数据论断用审慎表述**。对于置信度标注为"待核实"的观点，用"据嘉宾引用的研究显示""嘉宾给出的对比数据是""嘉宾提出一个假设"等表述，不要写成确定事实。置信度高的观点可以直接写。
 
-4. **正文结构**: 每个小节聚焦一个核心论点，用"观点→证据→延伸"三段式展开：
-   - 提出论断（1-2句，有判断力）
-   - 引用证据（"嘉宾X在对话中指出……" 或 "当被问到……时，嘉宾X的回答是……"）
-   - 延伸思考（这对读者意味着什么？为什么这件事重要？）
+5. **段落之间要有因果钩子**。不是列清单，是讲一个递进故事。上一段的结论引出下一段。关键过渡用一两句话桥接。
 
-5. **因果串联**: 段落之间不是列清单，而是有逻辑递进。上一段的结论自然引出下一段的问题。"刚才说了X，但X会导致什么？""这个观点没错，但真的够了吗？"
+6. **嘉宾称呼要有变化**。同一个人不要每句都是"嘉宾A说""嘉宾B又指出"。给嘉宾加身份标签：嘉宾A → "这位AI科学家""她"，嘉宾B → "这位在线教育老兵""他"。交替使用称呼和代词。
 
-6. **证据感**: 关键论述必须融入说话人和时间信息。不要写成学术引用格式，要写成自然叙事：
-   - 好："嘉宾A在访谈开场就给了一个让主持人停下来的定义——"
-   - 坏："据嘉宾A（00:00:04）表示……"
+7. **正文中不要出现时间戳**（如00:26:04）。证据融入用自然表述："在访谈中""当被问到……时""她分享了一个细节"。
 
-7. **语言**: 流畅的中文商业写作风格。不要用英文术语不加翻译。不要用markdown标记。不要写"在当今AI快速发展的时代背景下"这种开场白。绝对不要在正文中出现时间戳（如00:10:10或00:26:04）——用"在访谈中""当被问到……时""嘉宾回忆道"等自然表述替代。
+8. **结尾回到行动**。给读者一个明天就能做的具体动作。不要"综上所述""总而言之"。
 
-8. **审慎标注**: 对于低置信度观点，用"据嘉宾引用的研究""嘉宾提出一个假设""嘉宾的推测是"等审慎表述。不要把这些观点写成确定事实。
+9. **输出纯文本**。不要用 # * > ` 等markdown标记。`
 
-9. **结尾**: 回到读者的行动层面。不要以"总的来说""综上所述"开头。最好是一个具体的建议、一个有力的反问、或一个让人思考的金句。
+const USER_TEMPLATE = `文章目标标题：%s
+素材来源：%s
 
-## 文章格式（纯文本，不要markdown）
+编辑选定的大纲结构：
 
-[标题]
+%s
 
-内容来源：[来源文件名]
-责编 | 待定
-
-笔记君说：
-[一句话推荐语，30字以内]
-
-[正文自然段落，每段之间空一行]
-
-## 错误示范（禁止）
-- "在当今AI技术日新月异的时代..."
-- "首先……其次……最后……"
-- "综上所述，AI是一个强大的工具"
-- "值得注意的是""不可否认""众所周知"
-- 任何用markdown标记包裹的文字`
+写作指令：
+1. 根据以上大纲结构生成600-850字文章
+2. 每个章节必须展开
+3. 低置信度观点用审慎表述（"据嘉宾引用的研究""嘉宾提出一个假设"等）
+4. 段落之间要有因果递进
+5. 嘉宾称呼要有变化，不要每句都是"嘉宾A说"
+6. 结尾回到行动层面
+7. 输出纯文本，不要markdown标记
+8. 标题要有判断力`
 
 export async function POST(req: Request) {
   try {
     const { title, viewpoints, sections, sourceName } = await req.json()
     if (!viewpoints || !sections) return NextResponse.json({ error: "缺少数据" }, { status: 400 })
 
-    let context = `文章目标标题：${title}\n素材来源：${sourceName || "访谈逐字稿"}\n\n`
-    context += `以下是编辑选定的大纲和观点素材：\n\n`
-
+    // Build section context
+    let sectionCtx = ""
     for (const sec of sections) {
       if (!sec.itemIds || sec.itemIds.length === 0) continue
-      context += `--- 章节：${sec.title} ---\n\n`
+      sectionCtx += `### ${sec.title}\n\n`
       for (const vpId of sec.itemIds) {
         const vp = viewpoints.find((v: any) => v.id === vpId)
         if (!vp) continue
-        context += `【观点】${vp.title}\n`
-        context += `【说话人】${vp.speaker} | 时间：${vp.timestamp}\n`
-        context += `【摘要】${vp.summary}\n`
-        context += `【置信度】${vp.level}（${vp.confidence}%）\n`
-        context += `【证据原文】\n`
-        for (const eq of (vp.evidenceQuotes || [])) {
-          context += `  "[${eq.timestamp}] ${eq.text}" — ${eq.speaker}\n`
+        sectionCtx += `【观点】${vp.title}\n`
+        sectionCtx += `【说话人】${vp.speaker} | 时间：${vp.timestamp}\n`
+        sectionCtx += `【摘要】${vp.summary}\n`
+        sectionCtx += `【置信度】${vp.level}（${vp.confidence}%）\n`
+        sectionCtx += `【证据原文】\n`
+        for (const eq of (vp.evidenceQuotes || []).slice(0, 2)) {
+          sectionCtx += `  "[${eq.timestamp}] ${eq.text}" — ${eq.speaker}\n`
         }
-        if (vp.confidenceReason) context += `【置信度说明】${vp.confidenceReason}\n`
-        if (vp.editorialFlags) {
-          const f = vp.editorialFlags
-          if (f.factCheckNeeded) context += `【⚠ 待核实】${f.flagReason}\n`
-          if (f.needsHumanJudgment) context += `【⚠ 需编辑判断】${f.flagReason}\n`
-          if (f.sensitiveContent) context += `【⚡ 含敏感内容】${f.flagReason}\n`
+        if (vp.editorialFlags?.factCheckNeeded) {
+          sectionCtx += `【⚠ 待核实数据，需审慎表述】${vp.editorialFlags.flagReason}\n`
         }
-        context += `\n`
+        if (vp.editorialFlags?.needsHumanJudgment) {
+          sectionCtx += `【⚠ 需编辑判断】${vp.editorialFlags.flagReason}\n`
+        }
+        sectionCtx += `\n`
       }
     }
 
-    context += `\n写作指令：请根据以上素材，生成一篇600-800字的商业深度文章。每个章节至少展开1个自然段。关键论述必须引用说话人。不要列点，不要用markdown标记。叙事要有因果递进。`
+    const userMsg = USER_TEMPLATE
+      .replace("%s", title)
+      .replace("%s", sourceName || "访谈逐字稿")
+      .replace("%s", sectionCtx)
 
-    const article = await callAgent(SYSTEM_PROMPT, context)
+    const article = await callAgent(SYSTEM_PROMPT, userMsg, 8000)
 
     return NextResponse.json({ article })
   } catch (e: any) {

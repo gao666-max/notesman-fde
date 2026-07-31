@@ -54,12 +54,39 @@ const USER_TEMPLATE = `下面是访谈逐字稿（SRT格式，每段带说话人
 
 请严格按照System Prompt的要求提取10-15个观点，输出完整JSON。记住：每个观点必须有evidenceQuotes（至少1条原文引用+时间戳），confidenceReason不能为空，hotspotMatch要有具体的matchReason。`
 
+// Preprocess SRT: inline timestamps into speaker lines, strip numbering, reduce ~25% tokens
+function preprocessSRT(srt: string): string {
+  const lines = srt.split("\n")
+  const out: string[] = []
+  let pendingTS = ""
+  for (const line of lines) {
+    const t = line.trim()
+    // SRT number
+    if (/^\d+$/.test(t)) continue
+    // Timestamp line → save for next speaker line
+    const tsMatch = t.match(/^(\d{2}:\d{2}:\d{2}),\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}$/)
+    if (tsMatch) {
+      pendingTS = tsMatch[1]
+      continue
+    }
+    // Speaker line with pending timestamp
+    if (pendingTS && t.length > 0) {
+      out.push(`[${pendingTS}] ${line}`)
+      pendingTS = ""
+    } else if (t.length > 0) {
+      out.push(line)
+    }
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim()
+}
+
 export async function POST(req: Request) {
   try {
     const { srt } = await req.json()
     if (!srt) return NextResponse.json({ error: "缺少 SRT 文本" }, { status: 400 })
 
-    const result = await callAgent(SYSTEM_PROMPT, USER_TEMPLATE.replace("%s", srt), 32000)
+    const processed = preprocessSRT(srt)
+    const result = await callAgent(SYSTEM_PROMPT, USER_TEMPLATE.replace("%s", processed), 32000)
     const data = extractJSON(result)
     const viewpoints = normalizeViewpoints(data)
 

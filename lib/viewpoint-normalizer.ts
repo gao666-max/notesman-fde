@@ -100,7 +100,7 @@ function normalizeOne(raw: any, index: number): any {
   }
 
   // Hotspot match
-  // Normalize hotness — ensure 0-100 range regardless of input format
+  const hotspot = raw.hotspotMatch || raw.hotspot_match || raw.hotspot || {}
   let rawScore = hotspot.score ?? hotspot.relevance_score ?? hotspot.hotness_score
   let score: number
   if (typeof rawScore === "number") {

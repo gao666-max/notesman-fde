@@ -1,83 +1,80 @@
 import { NextResponse } from "next/server"
 import { callAgent } from "@/lib/anthropic"
 
-const VERIFY_SYSTEM = `你是事实核查专家。你会收到一段文章中的论断，你的任务是判断这个论断是否可信。
+const VERIFY_SYSTEM = `你是笔记侠事实核查编辑。你会收到一篇文章草稿和观点证据数据，逐条核查。
 
-对每个论断：
-1. 基于你的训练知识，判断该论断是否有已知事实支撑
-2. 标注为以下之一：
-   - "可信"：该论断与已知事实一致或属于嘉宾个人经验的合理陈述
-   - "存疑"：该论断涉及未广泛验证的数据、预测性判断、或可能过度简化的因果推论
-   - "待核实"：该论断涉及具体的数字、时间、机构名等外部事实，无法仅凭训练知识判断
-3. 给出简短理由（1-2句）
+## 核查清单（每条必须覆盖）
 
-输出格式（纯文本）：
+1. **数据论断**：文章中出现的具体数字、金额、百分比、时间、机构名——是否有证据支撑？证据来自嘉宾还是嘉宾引用的外部研究？
+2. **置信度交叉检查**：所有低置信和中置信度的观点节点，在文章中的表述是否做了审慎处理（"据嘉宾引用的研究""嘉宾提出一个假设"等），还是写成了确定事实？
+3. **说话人归属**：文章中的引用和归因是否正确？
+4. **缺失检查**：编辑大纲中选定的观点节点，有没有在文章中被遗漏？
+5. **表述风险**：有没有可能引发争议、恐惧或误解的表述？
 
-【核查结论】
-[整体可信度评估：高/中/低]
+## 输出格式（纯文本）
+
+【核查概览】
+本文基于X个观点节点生成，共发现Y处需要编辑关注的问题。其中🔴必须确认Z项，🟡建议确认W项。
 
 【逐条核查】
-1. [论断摘要]
-   判定：可信/存疑/待核实
-   理由：[1-2句]
+对每个问题：
+- [观点编号] [文章相关句子的前10字]
+- 问题类型：数据待核实/审慎表述缺失/说话人错误/观点遗漏/表述风险
+- 证据：原始数据中的对应内容
+- 建议：具体怎么修
 
-注意：不要重复整段原文，每个论断用一句话概括即可。`
+【整体评估】
+- 事实准确度：高/中/低
+- 必确认项：列出
+- 可后续处理项：列出
+
+【编辑行动建议】
+按优先级（🔴🟡🟢）列出每项应该怎么改。`
 
 export async function POST(req: Request) {
   try {
     const { article, viewpoints } = await req.json()
     if (!article) return NextResponse.json({ error: "缺少文章文本" }, { status: 400 })
 
-    // Extract factual claims that need verification
-    const claims: string[] = []
-
-    // 1. Claims from viewpoints with fact_check_needed flags
-    if (viewpoints) {
-      for (const vp of viewpoints) {
-        if (vp.editorialFlags?.factCheckNeeded || vp.level === "low" || vp.level === "medium") {
-          claims.push(`[来源：${vp.speaker}，置信度${vp.confidence}%] ${vp.title}：${vp.summary}`)
-        }
+    // Build comprehensive evidence context
+    let evidenceCtx = "## 观点证据数据\n\n"
+    const flaggedVps: any[] = []
+    for (const vp of (viewpoints || [])) {
+      evidenceCtx += `[${vp.id}] ${vp.title}\n`
+      evidenceCtx += `说话人：${vp.speaker} | 置信度：${vp.level}（${vp.confidence}%）\n`
+      evidenceCtx += `摘要：${vp.summary}\n`
+      for (const eq of (vp.evidenceQuotes || [])) {
+        evidenceCtx += `证据：[${eq.speaker} ${eq.timestamp}] "${eq.text}"\n`
       }
-    }
-
-    // 2. Also scan the article for number patterns (potential unverified data)
-    const numberPatterns = article.match(/([^。\n]{0,30}(?:\d+[万亿千百]?(?:美元|元|%|倍|年|人)[^。\n]{0,30}))/g)
-    if (numberPatterns) {
-      for (const m of numberPatterns.slice(0, 8)) {
-        if (!claims.some(c => c.includes(m.substring(0, 30)))) {
-          claims.push(`[文章中的数据表述] ${m.trim()}`)
-        }
+      const f = vp.editorialFlags || {}
+      if (f.factCheckNeeded) {
+        evidenceCtx += `⚠ 需事实核查：${f.flagReason}\n`
+        flaggedVps.push(vp)
       }
+      if (f.needsHumanJudgment) {
+        evidenceCtx += `⚠ 需编辑判断：${f.flagReason}\n`
+        if (!flaggedVps.includes(vp)) flaggedVps.push(vp)
+      }
+      if (f.sensitiveContent) evidenceCtx += `⚡ 含敏感内容：${f.flagReason}\n`
+      if (vp.level === "low" || vp.level === "mid") {
+        if (!flaggedVps.includes(vp)) flaggedVps.push(vp)
+        evidenceCtx += `注意：此观点置信度为${vp.confidence}%，应在文章中用审慎表述\n`
+      }
+      evidenceCtx += `\n`
     }
 
-    // 3. Build verification prompt
-    if (claims.length === 0) {
-      return NextResponse.json({
-        report: `RAG 外部核查报告\n\n未发现需要外部核查的论断。所有已选用观点均为高置信，文章中未检测到未标注的数据表述。\n\n建议：编辑通读全文后可直接发布。`,
-      })
-    }
+    // Prioritize: put flagged viewpoints first
+    const priorityNote = flaggedVps.length > 0
+      ? `特别提醒：以下${flaggedVps.length}个观点节点标注了需核查，请重点检查文章中对这些观点的表述：\n${flaggedVps.map((v: any) => `- ${v.id} ${v.title}`).join('\n')}\n\n`
+      : ""
 
-    const claimsText = claims.map((c, i) => `${i + 1}. ${c}`).join("\n\n")
-    const userMsg = `请核查以下文章中的论断：\n\n=== 文章 ===\n${article.substring(0, 2000)}\n\n=== 需核查的论断 ===\n${claimsText}`
+    const userMsg = `请核查以下文章：\n\n=== 文章 ===\n${article}\n\n=== 证据数据 ===\n${priorityNote}${evidenceCtx}\n\n请逐条核查，确保覆盖所有标注了"需事实核查""需编辑判断"和置信度低于high的观点节点。`
 
-    const result = await callAgent(VERIFY_SYSTEM, userMsg, 4000)
-
-    // 4. Build final report
-    let report = `RAG 外部核查报告\n\n`
-    report += `核查时间：${new Date().toLocaleString("zh-CN")}\n`
-    report += `核查方式：LLM 基于训练知识交叉验证（非实时搜索）\n`
-    report += `核查条目：${claims.length} 项\n\n`
-    report += `─── 核查结果 ───\n\n`
-    report += result
-    report += `\n\n─── 说明 ──\n`
-    report += `本核查基于 AI 模型的训练知识进行交叉验证，非实时网络搜索。\n`
-    report += `标记为"待核实"的条目建议编辑手动搜索确认。\n`
-    report += `标记为"存疑"的条目建议在文章中改为审慎表述（如"据嘉宾引用的研究""嘉宾提出一个假设"）。\n`
-    report += `方案设计中规划了完整的 RAG 管道（向量化 embedding → 余弦相似度检索 → Top-K=5 → LLM 判断），当前原型用 LLM 内检作为替代实现。`
+    const report = await callAgent(VERIFY_SYSTEM, userMsg, 8000)
 
     return NextResponse.json({ report })
   } catch (e: any) {
-    console.error("RAG check error:", e)
+    console.error("Agent 4 error:", e)
     return NextResponse.json({ error: e.message || "核查失败" }, { status: 500 })
   }
 }
