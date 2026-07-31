@@ -79,5 +79,20 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · DeepSeek API
 
 ## 预置演示数据
 
-默认展示的 13 个观点节点是基于题目提供的 `interview_transcript.srt`
-通过 Agent 1 预运行生成的。导入真实 SRT 文件后会替换为实时分析结果。
+默认展示的 13 个观点节点是从 `outputs/viewpoints.json` 自动生成的（与 AI 管线同一份数据）。
+来源：Agent 1 分析题目提供的 `interview_transcript.srt` 的真实输出结果。
+
+**面试官可以用两种方式验证 AI 管线**：
+1. **直接看 outputs/**：所有静态交付物（观点/文章/核查报告）都在 `outputs/` 目录
+2. **导入 SRT 实时跑**：打开前端 → 导入 `interview_transcript.srt` → Agent 1-4 真实运行
+
+`lib/mock-data.ts` 中的预置数据 = `outputs/viewpoints.json` 的数据，由 `scripts/sync_mock_data.py` 保持同步。
+
+## 交付物清单
+
+| 产出 | 位置 | 格式 |
+|------|------|------|
+| 产出 1：需求澄清 | `outputs/requirements_definition.docx` | Word |
+| 产出 2：方案设计 | `outputs/solution_design.docx` | Word |
+| 产出 3：可运行原型 | 本目录（`pnpm dev` 启动）+ `outputs/` 下的运行结果 | Next.js + Markdown |
+| 产出 4：讲解视频 | 待提交 | MP4 |

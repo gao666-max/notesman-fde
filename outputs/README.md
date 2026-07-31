@@ -1,59 +1,55 @@
-# 笔记侠 AI 增强内容复盘工具 — 最小可运行原型
+# 产出文件说明
 
-## 运行环境
-- Claude Code（或任何支持长文本处理的 LLM）
-- Python 3.10+（数据处理辅助脚本）
+## 这个目录是什么
 
-## 文件结构
-```
-outputs/
-├── agent1_prompt.md          # Agent 1（观点提取）完整 Prompt
-├── viewpoints.json            # Agent 1 输出：13个结构化观点节点
-├── angles.md                  # 3个内容标题/切入角度备选
-├── outline.md                 # 文章结构与关键要点
-├── reuse_suggestions.md       # 8篇历史笔记复用判断
-├── evidence.md               # 14条关键论述的证据溯源表
-├── draft_v0_5.md             # 500-800字内容初稿（含时间戳标注）
-├── editorial_checks.md       # 编辑人工确认清单（6大类18条）
-└── README.md                 # 本文件
-```
+`outputs/` 是题目要求的**静态交付物**。所有文件均基于题目提供的 `interview_transcript.srt` + `historical_notes.jsonl` + `published_samples/` 实际运行生成。
 
-## 运行方式
+## 与 Next.js 前端原型的关系
 
-### 步骤1：观点提取（Agent 1）
-将 `agent1_prompt.md` 作为 System Prompt，把 `interview_transcript.srt` 作为输入，LLM 输出结构化 JSON。
-```
-在 Claude Code 中：
-> 按 agent1_prompt.md 的要求，读取 interview_transcript.srt，
-> 输出结构化 viewpoints.json
-```
+| | outputs/（本目录） | Next.js 前端 |
+|------|------|------|
+| 定位 | 静态交付物，面试官直接阅读 | 可运行原型，面试官亲自操作 |
+| 启动 | 不需要，打开文件即看 | `pnpm dev` → http://localhost:3000 |
+| AI 管线 | 预运行结果（DeepSeek Chat） | 实时调用 API，导入任意 SRT 重新分析 |
+| 数据源 | 同一份 viewpoints.json | 默认加载同一份数据，导入 SRT 后替换 |
 
-### 步骤2-6：后续处理
-每个步骤读上一步的输出文件，按对应 Prompt 处理。
-完整 Prompt 链见方案设计文档。
+**outputs/ 和前端 mock-data.ts 使用的是同一份 viewpoints.json 数据**，通过 `scripts/sync_mock_data.py` 保持同步。
 
-## 已实现范围
-- ✅ Agent 1（观点提取+证据溯源+热点匹配）完整 Prompt 及运行结果
-- ✅ 13个观点节点，每个附带时间戳证据、置信度标签、编辑标注
-- ✅ 3个切入角度 + 推荐理由
-- ✅ 文章结构大纲
-- ✅ 8篇历史笔记逐一复用判断（含 note_02 陷阱识别）
-- ✅ 14条证据溯源表（标注证据强度）
-- ✅ 500-800字可编辑初稿 v0.5
-- ✅ 6大类18条编辑确认清单
+## 文件清单
 
-## 尚未实现
-- ⬜ Agent 2/3/4 的独立 Prompt 及运行
-- ⬜ 前端知识图谱可视化（交互式可拖拽界面）
-- ⬜ 热点实时爬取与匹配
-- ⬜ 在线协同编辑能力
+| 文件 | 格式 | 对应题目要求 |
+|------|------|------------|
+| `requirements_definition.docx` | Word | 产出 1：需求澄清与问题定义 |
+| `solution_design.docx` | Word | 产出 2：方案设计（四 Agent 架构） |
+| `agent1_prompt.md` | Markdown | Agent 1 Prompt（可复现） |
+| `viewpoints.json` | JSON | Agent 1 输出：13 个结构化观点节点 |
+| `angles.md` | Markdown | 3 个切入角度备选 + 推荐理由 |
+| `outline.md` | Markdown | 文章结构大纲 |
+| `evidence.md` | Markdown | 14 条证据溯源表（含证据强度） |
+| `reuse_suggestions.md` | Markdown | 8 篇历史笔记复用判断（含 note_02 陷阱分析） |
+| `draft_v0_5.md` | Markdown | 约 800 字可编辑初稿 v0.5 |
+| `editorial_checks.md` | Markdown | 6 大类 18 条编辑确认清单（🔴🟡🟢 优先级） |
 
-## 第三方工具与模型
-- Claude Code（Anthropic）：Prompt 执行与内容生成
-- 本原型所有 Prompt 为原创设计
+## 数据来源
 
-## 关键取舍
-1. 选择多步Prompt链而非多Agent实时编排——48小时内可控性优先
-2. 观点节点数量控制在13个而非穷举——质量>数量
-3. 热点匹配采用预定义话题列表而非实时爬取——可复现性优先
-4. note_02 明确标注为"同一场/不复用"——展示了复用判断能力
+- 逐字稿：`data/interview_transcript.srt`（97 段 SRT，约 17KB）
+- 历史笔记：`data/historical_notes.jsonl`（8 篇脱敏笔记）
+- 样稿：`data/published_samples/`（3 篇 .docx）
+- AI 引擎：DeepSeek Chat（通过 Anthropic 兼容协议调用）
+- 预运行时间：2026-08-01
+
+## 已实现 / 未实现
+
+### 已实现
+- ✅ Agent 1 观点提取+证据溯源+热点匹配（完整 Prompt + 运行结果）
+- ✅ Agent 2 历史复用判断（API 已部署，导入 JSONL 即触发）
+- ✅ Agent 3 草稿生成（API 已部署，前端点击按钮即触发）
+- ✅ Agent 4 事实核查（API 已部署，前端点击按钮即触发）
+- ✅ Next.js 交互式前端（四象限 + 抽屉卡片 + 拖拽编辑 + 详情弹窗）
+- ✅ 前端导入真实 SRT → 实时重新分析
+- ✅ README + .env.example（面试官可一键启动）
+
+### 未实现
+- ⬜ RAG 外检管道（方案设计中有，原型中用 LLM 内检替代）
+- ⬜ 热点实时爬取（用预定义话题列表 + LLM 语义匹配替代）
+- ⬜ 在线协同编辑（静态前端，单用户操作）
