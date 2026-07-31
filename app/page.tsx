@@ -10,6 +10,7 @@ import { CardLibrary } from "@/components/card-library"
 import { EditorWorkspace } from "@/components/editor-workspace"
 import { StatusBar } from "@/components/status-bar"
 import { DetailModal } from "@/components/detail-modal"
+import { localGenerateDraft, localGenerateFactCheck } from "@/lib/local-generators"
 
 export default function Page() {
   const [viewpoints, setViewpoints] = useState<Viewpoint[]>(MOCK_VIEWPOINTS)
@@ -186,28 +187,15 @@ export default function Page() {
       URL.revokeObjectURL(url)
       toast(`✅ 草稿已生成（${article.length} 字）`)
     } catch (e: any) {
-      // Fallback to local generation
-      toast(`API 不可用，使用本地生成`)
-      const usedIds: string[] = []
-      let txt = `${title}\n\n`
-      txt += `内容来源：${sourceName}\n责编 | 待定\n\n笔记君说：AI时代真正的分水岭不是技能，是能动性。\n\n`
-      sections.forEach((sec) => {
-        if (sec.itemIds.length === 0) return
-        txt += `${sec.title}\n\n`
-        sec.itemIds.forEach((vpId) => {
-          const vp = byId.get(vpId); if (!vp) return
-          usedIds.push(vpId)
-          txt += `${vp.summary}\n`
-          if (vp.evidenceQuotes?.length > 0) txt += `——${vp.evidenceQuotes[0].speaker} [${vp.evidenceQuotes[0].timestamp}]\n`
-          txt += `\n`
-        })
-      })
-      txt += `本文由AI辅助生成，编辑可继续修改。`
-      const blob = new Blob([txt], { type: "text/plain;charset=utf-8" })
+      // Fallback: local article generator (produces natural prose, not bullet points)
+      toast(`API 不可用，使用本地引擎生成`)
+      const article = localGenerateDraft(title, sourceName, sections, byId)
+      const blob = new Blob([article], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url; a.download = "draft_v0_5.txt"; a.click()
       URL.revokeObjectURL(url)
+      toast(`✅ 草稿已生成（${article.length} 字）`)
     }
     setLoadingDraft(false)
   }, [title, viewpoints, sections, sourceName, byId])
@@ -239,28 +227,8 @@ export default function Page() {
       URL.revokeObjectURL(url)
       toast("✅ 核查报告已生成")
     } catch (e: any) {
-      toast(`核查失败，使用本地分析：${e.message}`)
-      // Local fallback
-      let report = `事实核查报告\n生成时间：${new Date().toLocaleString("zh-CN")}\n文章标题：${title}\n素材来源：${sourceName}\n\n`
-      let count = 0
-      sections.forEach((sec) => {
-        report += `\n== ${sec.title} ==\n\n`
-        sec.itemIds.forEach((vpId) => {
-          const vp = byId.get(vpId); if (!vp) return
-          const flags: string[] = []
-          if (vp.editorialFlags?.factCheckNeeded) flags.push(`需事实核查：${vp.editorialFlags.flagReason}`)
-          if (vp.editorialFlags?.needsHumanJudgment) flags.push(`需编辑判断：${vp.editorialFlags.flagReason}`)
-          if (vp.editorialFlags?.sensitiveContent) flags.push(`含敏感内容`)
-          if (vp.level !== "high") flags.push(`置信度${vp.confidence}%——建议${vp.level === "mid" ? "复核" : "确认"}`)
-          if (flags.length > 0) {
-            count++
-            report += `${vp.id} ${vp.title}\n`
-            flags.forEach(f => { report += `  - ${f}\n` })
-            report += `  证据：[${vp.timestamp}] "${vp.evidenceQuotes?.[0]?.text?.substring(0, 80) || ""}..."\n\n`
-          }
-        })
-      })
-      report += `\n共计 ${count} 项需关注。`
+      toast(`核查失败，使用本地引擎：${e.message}`)
+      const report = localGenerateFactCheck(title, sourceName, sections, byId)
       const blob = new Blob([report], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
