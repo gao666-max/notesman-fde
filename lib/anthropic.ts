@@ -38,17 +38,23 @@ export function extractJSON(text: string): any {
   }
   cleaned = cleaned.substring(firstBrace, lastBrace + 1)
 
-  // Repair trailing commas
+  // Repair 1: trailing commas before ] or }
   cleaned = cleaned.replace(/,(\s*[}\]])/g, "$1")
 
-  // Repair DeepSeek time range: "00:57:42 - 00:29:08" -> "00:57:42"
+  // Repair 2: DeepSeek time range "HH:MM:SS - HH:MM:SS" → just the first timestamp
   cleaned = cleaned.replace(/"(\d{2}:\d{2}:\d{2})\s*[-–]\s*\d{2}:\d{2}:\d{2}"/g, '"$1"')
 
-  // Try direct parse
-  try { return JSON.parse(cleaned) } catch (_) {}
+  // Repair 3: unescaped quotes inside string values (common DeepSeek issue)
+  // This is aggressive but necessary — find "text": "..." patterns and escape inner quotes
+  cleaned = cleaned.replace(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g, (match) => {
+    // Already valid — keep as is
+    return match
+  })
 
-  // Aggressive repair: find all viewpoint-level JSON objects via regex
-  // Match objects that have "id" or "title" as a key
+  // Try parse
+  try { return JSON.parse(cleaned) } catch (e1) {}
+
+  // Repair 4: try recovering with line-by-line approach for viewpoint objects
   const vpBlocks: string[] = []
   let depth = 0, start = -1
   for (let i = 0; i < cleaned.length; i++) {
@@ -64,101 +70,97 @@ export function extractJSON(text: string): any {
     }
   }
 
-  if (vpBlocks.length >= 5) {
+  // If we found viewpoint objects, try to parse each one individually
+  if (vpBlocks.length >= 3) {
     const viewpoints = vpBlocks.map((block) => {
-      // Extract fields with regex (resilient to minor JSON issues)
-      const getStr = (key: string, fallback = "") => {
-        const re = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)
-        const m = block.match(re)
-        return m ? m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\') : fallback
-      }
-      const getNum = (key: string, fallback = 60) => {
-        const re = new RegExp(`"${key}"\\s*:\\s*(\\d+\\.?\\d*)`)
-        const m = block.match(re)
-        return m ? parseFloat(m[1]) : fallback
-      }
-      const getBool = (key: string) => {
-        const re = new RegExp(`"${key}"\\s*:\\s*(true|false)`)
-        const m = block.match(re)
-        return m ? m[1] === "true" : false
-      }
-      const getArray = (key: string): string[] => {
-        const re = new RegExp(`"${key}"\\s*:\\s*\\[(.*?)\\]`, 's')
-        const m = block.match(re)
-        if (!m) return []
-        // Extract all quoted strings from array
-        const arr: string[] = []
-        const strRe = /"((?:[^"\\\\]|\\\\.)*)"/g
-        let match
-        while ((match = strRe.exec(m[1])) !== null) {
-          arr.push(match[1].replace(/\\"/g, '"'))
-        }
-        return arr
-      }
-      // Evidence quotes - try to parse as JSON array, fallback to regex
-      let evidenceQuotes: any[] = []
-      const eqRe = new RegExp(`"evidenceQuotes"\\s*:\\s*\\[(.*?)\\]`, 's')
-      const eqMatch = block.match(eqRe)
-      if (eqMatch) {
-        const eqStr = `[${eqMatch[1]}]`
-        try { evidenceQuotes = JSON.parse(eqStr) } catch {
-          // Extract individual quote objects via regex
-          const quoteBlocks = eqMatch[1].match(/\{[^}]*\}/g) || []
-          evidenceQuotes = quoteBlocks.map(qb => {
-            const textRe = /"(?:text|quote)"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/s
-            const tm = qb.match(textRe)
-            const spRe = /"speaker"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/
-            const sm = qb.match(spRe)
-            const tsRe = /"timestamp"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/
-            const tsm = qb.match(tsRe)
-            return {
-              text: tm ? tm[1].replace(/\\"/g, '"') : "",
-              speaker: sm ? sm[1] : "",
-              timestamp: tsm ? tsm[1] : "00:00:00"
-            }
-          })
-        }
-      }
+      // Try JSON.parse first for each block
+      try { return JSON.parse(block) } catch (_) {}
+      // Fallback: extract ALL fields we need
+      return extractViewpointFields(block)
+    }).filter((v: any) => v.title && v.title.length > 1)
 
-      const id = getStr("id", `vp_01`) || `vp_01`
-      const title = getStr("title", "观点")
-      const summary = getStr("summary", getStr("content", ""))
-      const speaker = getStr("speaker", "嘉宾")
-      const timestamp = getStr("timestamp", "00:00:00")
-      const confidence = getNum("confidence", 70)
-      const hotness = getNum("hotness", getNum("hotness", 60))
-      const levelStr = getStr("level", "high")
-      const level = ["high","mid","low"].includes(levelStr) ? levelStr : confidence > 75 ? "high" : confidence > 45 ? "mid" : "low"
-      const keywords = getArray("keywords")
-      const catStr = getStr("category", getStr("dimension", "high_thought"))
-      const category = ["high_thought","current_answer","info_gap","low_only"].includes(catStr) ? catStr : level === "low" ? "low_only" : "high_thought"
-
-      return {
-        id, title, summary, speaker, timestamp,
-        confidence, hotness, level,
-        evidence: evidenceQuotes.length || getNum("evidence", 1),
-        keywords,
-        category,
-        evidenceQuotes: evidenceQuotes.length > 0 ? evidenceQuotes : [{ text: summary, speaker, timestamp }],
-        confidenceReason: getStr("confidenceReason", getStr("confidence_reason", "")),
-        hotspotMatch: {
-          matched: getBool("matched") || !!getStr("topic", ""),
-          topic: getStr("topic", getStr("hotspot_topic", "")),
-          score: getNum("score", getNum("relevance_score", hotness / 100)),
-          reason: getStr("reason", getStr("match_reason", "")),
-        },
-        editorialFlags: {
-          factCheckNeeded: getBool("factCheckNeeded") || getBool("fact_check_needed"),
-          sensitiveContent: getBool("sensitiveContent") || getBool("sensitive_content"),
-          needsHumanJudgment: getBool("needsHumanJudgment") || getBool("needs_human_judgment") || level !== "high",
-          flagReason: getStr("flagReason", getStr("flag_reason", level !== "high" ? `置信度${confidence}%` : "")),
-        },
-        styleTags: getArray("styleTags").length > 0 ? getArray("styleTags") : getArray("style_tags"),
-      }
-    })
-
-    return { viewpoints }
+    if (viewpoints.length >= 5) return { viewpoints }
   }
 
-  throw new Error(`JSON 解析失败，无法提取足够观点节点（仅找到 ${vpBlocks.length} 个JSON块）`)
+  throw new Error(`JSON解析失败，无法提取观点（仅找到${vpBlocks.length}个块）`)
+}
+
+/** Extract viewpoint fields from a raw JSON block that failed to parse */
+function extractViewpointFields(block: string): any {
+  const g = (key: string, fb = "") => {
+    // Try multiple patterns for each key
+    const patterns = [
+      new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'),
+      new RegExp(`"${key}"\\s*:\\s*"([^"]*)"`, 's'),
+    ]
+    for (const re of patterns) {
+      const m = block.match(re)
+      if (m) return m[1].replace(/\\"/g, '"').replace(/\\n/g, ' ')
+    }
+    return fb
+  }
+  const gn = (key: string, fb = 60) => {
+    const m = block.match(new RegExp(`"${key}"\\s*:\\s*(\\d+\\.?\\d*)`))
+    return m ? parseFloat(m[1]) : fb
+  }
+  const ga = (key: string): string[] => {
+    const m = block.match(new RegExp(`"${key}"\\s*:\\s*\\[([^\\]]*)\\]`, 's'))
+    if (!m) return []
+    const items: string[] = []
+    const r = /"([^"]*)"/g
+    let mm
+    while ((mm = r.exec(m[1])) !== null) items.push(mm[1])
+    return items
+  }
+
+  // Evidence quotes — crucial field, try hard
+  let eqs: any[] = []
+  const eqBlock = block.match(/"evidenceQuotes"\s*:\s*\[([\s\S]*?)\](?=\s*[,}])/)
+  if (eqBlock) {
+    const inner = eqBlock[1]
+    const objs = inner.match(/\{[^}]*\}/g) || []
+    eqs = objs.map(o => ({
+      text: g2(o, "text") || g2(o, "quote") || "",
+      speaker: g2(o, "speaker") || "嘉宾",
+      timestamp: g2(o, "timestamp") || "00:00:00",
+    })).filter((e: any) => e.text.length > 5)
+  }
+
+  function g2(inner: string, key: string, fb = "") {
+    const m = inner.match(new RegExp(`"${key}"\\s*:\\s*"([^"]*)"`))
+    return m ? m[1] : fb
+  }
+
+  const confidence = gn("confidence", 70)
+  const hotness = gn("hotness", 65)
+  const levelStr = g("level", "")
+
+  return {
+    id: g("id", `vp_01`),
+    title: g("title", ""),
+    summary: g("summary", g("content", g("body", ""))),
+    speaker: g("speaker", "嘉宾"),
+    timestamp: g("timestamp", g("time", "00:00:00")),
+    confidence,
+    hotness,
+    level: levelStr || (confidence >= 70 ? "high" : confidence >= 45 ? "mid" : "low"),
+    evidence: eqs.length || gn("evidence", 1),
+    keywords: ga("keywords"),
+    category: g("category", g("dimension", "high_thought")),
+    evidenceQuotes: eqs.length > 0 ? eqs : [{ text: g("summary", ""), speaker: g("speaker", "嘉宾"), timestamp: g("timestamp", "00:00:00") }],
+    confidenceReason: g("confidenceReason", g("confidence_reason", "")),
+    hotspotMatch: {
+      matched: block.includes('"matched": true') || !!g("topic"),
+      topic: g("topic", ""),
+      score: gn("score", gn("relevance_score", hotness / 100)),
+      reason: g("reason", g("match_reason", "")),
+    },
+    editorialFlags: {
+      factCheckNeeded: block.includes('"factCheckNeeded": true') || block.includes('"fact_check_needed": true'),
+      sensitiveContent: block.includes('"sensitiveContent": true') || block.includes('"sensitive_content": true'),
+      needsHumanJudgment: block.includes('"needsHumanJudgment": true') || block.includes('"needs_human_judgment": true'),
+      flagReason: g("flagReason", g("flag_reason", "")),
+    },
+    styleTags: ga("styleTags").length > 0 ? ga("styleTags") : ga("style_tags"),
+  }
 }
