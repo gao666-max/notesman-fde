@@ -115,11 +115,32 @@ export default function Page() {
     }
   }, [])
 
-  // --- IMPORT NOTES ---
+  // --- IMPORT NOTES → Agent 2 ---
   const handleImportNotes = useCallback(async (data: any[]) => {
     setNotesContent(data)
-    toast(`📂 已加载 ${data.length} 篇历史笔记。Agent 2 复用判断：见方案设计文档。`)
-  }, [])
+    setStatus("analyzing")
+    toast("Agent 2 正在判断复用…")
+    try {
+      const res = await fetch("/api/reuse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewpoints, notes: data }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const result = await res.json()
+      const suggestions = result.suggestions || ""
+      const blob = new Blob([suggestions], { type: "text/plain;charset=utf-8" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = "reuse_suggestions.txt"; a.click()
+      URL.revokeObjectURL(url)
+      setStatus("done")
+      toast(`✅ 复用判断完成，报告已下载`)
+    } catch (e: any) {
+      toast(`Agent 2 暂时不可用：${e.message}`)
+      setStatus("done")
+    }
+  }, [viewpoints])
 
   // --- REANALYZE ---
   const handleReanalyze = useCallback(async () => {
