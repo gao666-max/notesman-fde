@@ -40,6 +40,14 @@ export interface Viewpoint {
   hotspotMatch: HotspotMatch
   editorialFlags: EditorialFlags
   styleTags: string[]
+  counterpoint?: { speaker: string; summary: string } | null
+}
+
+export interface WeakSignal {
+  topic: string
+  speaker: string
+  timestamp: string
+  why: string
 }
 
 export interface Category {

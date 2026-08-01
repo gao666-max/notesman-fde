@@ -26,13 +26,14 @@ interface EditorWorkspaceProps {
   onFactCheck: () => void
   loadingDraft?: boolean
   loadingCheck?: boolean
+  weakSignals?: {topic:string;speaker:string;timestamp:string;why:string}[]
 }
 
 export function EditorWorkspace({
   sections, byId, activeSectionId, draggingId, selectedId, title,
   onTitleChange, onSetActive, onDropToSection, onRemove, onSelect,
   onGenerateDraft, onSaveOutline, onExportMarkdown, onFactCheck,
-  loadingDraft, loadingCheck,
+  loadingDraft, loadingCheck, weakSignals,
 }: EditorWorkspaceProps) {
   const [overSection, setOverSection] = useState<string | null>(null)
   const usedCount = sections.reduce((s, sec) => s + sec.itemIds.length, 0)
@@ -97,6 +98,28 @@ export function EditorWorkspace({
           })}
         </div>
       </div>
+
+        )}
+
+      {/* Weak Signals Section */}
+      {weakSignals && weakSignals.length > 0 && (
+        <div style={{margin:"16px 0",border:"2px dashed #fbbf24",borderRadius:12,padding:16,background:"rgba(251,191,36,0.06)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <span style={{fontSize:14,fontWeight:600,color:"#92400e"}}>访谈中的弱信号</span>
+            <span style={{fontSize:12,color:"#b45309"}}>嘉宾提过但未展开</span>
+          </div>
+          {weakSignals.map((ws, i) => (
+            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 12px",fontSize:13,marginBottom:4,background:"rgba(255,255,255,0.6)",borderRadius:8}}>
+              <span style={{color:"#f59e0b",fontWeight:700,fontSize:11,flexShrink:0,marginTop:2}}>[{ws.timestamp}]</span>
+              <div>
+                <span style={{fontWeight:600}}>{ws.topic}</span>
+                <span style={{color:"#6b7280"}}> — {ws.speaker}</span>
+                <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>{ws.why}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Action bar — each button does a different thing */}
       <div className="flex flex-wrap items-center gap-2 border-t bg-card px-4 py-3">

@@ -59,6 +59,18 @@ export function DetailModal({ vp, open, onClose, srtContext }: DetailModalProps)
           <p className="mt-1.5 text-sm leading-relaxed">{vp.summary}</p>
         </div>
 
+        {/* Counterpoint */}
+        {vp.counterpoint && (
+          <div className="mt-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">反观点</h4>
+            <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 dark:bg-amber-950/20 dark:border-amber-800">
+              <p className="text-sm">
+                <span className="font-medium">{vp.counterpoint.speaker}</span>对此有不同看法：{vp.counterpoint.summary}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* SRT Context Panel */}
         {srtContext && srtContext.length > 0 && (
           <div className="mt-5">

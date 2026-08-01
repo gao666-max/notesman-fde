@@ -2,80 +2,69 @@ import { NextResponse } from "next/server"
 import { callAgent, extractJSON } from "@/lib/anthropic"
 import { normalizeViewpoints } from "@/lib/viewpoint-normalizer"
 
-const SYSTEM_PROMPT = `你是笔记侠首席内容编辑。你正在处理一份访谈逐字稿，需要为后续的写作环节提取结构化观点素材。
+const SYSTEM_PROMPT = `你是笔记侠首席内容编辑。处理访谈逐字稿，提取结构化观点素材。
 
-## 你的任务
-通读逐字稿，识别并提取 10-15 个有发表价值的独立观点。每个观点必须是"一个可独立论述的判断"，不是"一段对话的摘要"。
+## 三个提取维度（每个维度至少2条，总数8-14条）
 
-## 三个提取维度
+1. **high_thought（高维思想）**：嘉宾与主流观点有明显差异的洞察。别人说不出来的东西。
+2. **current_answer（当下解答）**：嘉宾给出的具体建议或思考框架。读者看完能说"我知道该怎么做了"。
+3. **info_gap（信息差）**：行业内部数据、具体案例、前沿实践。行外人不知道的东西。
 
-1. **high_thought（高维思想）**：嘉宾表述中与主流观点有明显差异的洞察。不是"AI很重要"这种泛泛而谈，是"别人说不出来"的东西。
-2. **current_answer（当下解答）**：嘉宾针对具体问题给出的具体建议或思考框架。读者看完能说"我知道该怎么做了"。
-3. **info_gap（信息差）**：嘉宾透露的行业内部数据、具体案例、前沿实践。行外人不知道的东西。没有的话可以少提或不提，不要硬凑。
+强制要求：三个维度每个至少2条。如果某个维度真的找不到，在输出JSON的meta里标注原因。
 
-## 置信度标准（影响后续编辑决策，请严格判断）
+## 反观点检测（counterpoint）
 
-- **high（85-95分）**：原文可逐句回溯，嘉宾表述清晰，有具体例子或数据。"嘉宾A说'我自己用AI重写了整个CEO工具栈'"
-- **medium（45-65分）**：嘉宾确实表达了这个意思，但措辞含糊、或引用了未指明来源的外部数据。"嘉宾B说教育成本从12000降到100，但没说数据来自哪项研究"
-- **low（25-45分）**：AI推测了嘉宾未明说的含义，或原文极度含糊。low不是"这个观点不重要"，是"原文证据不充分"。
+对每个观点，检查全文中是否有其他说话人的矛盾或不同意见。不要求每条都有。
+- 嘉宾A说X，嘉宾B有没有说非X或对X有保留？
+- 同一个嘉宾有没有在别处说了和这个观点不完全一致的话？
+- 如果有，在 counterpoint 字段记录（说话人+原文摘要）。没有就填 null。
 
-## 热点匹配（不是每一条都要匹配）
+## 弱信号提取（weakSignals）
 
-对照以下热点话题判断相关性（0-100分）：
-- AI替代工作 / 白领失业
-- AI编程工具改变了什么
-- AI教育：学校该禁AI还是拥抱AI
-- 空间智能 / 具身智能 / 机器人
-- AI创业 / 融资 / 估值
-- AI时代的个人成长 / 职业规划
-- 大模型价格战 / 开源vs闭源
+逐字稿中嘉宾随口提到但没有展开、但可能值得后续追踪的话题点。标准：
+- 嘉宾提了一嘴但主持人没追问、嘉宾自己也没展开
+- 置信度低但方向上有意思
+- 可能是未来选题或延伸报道的线索
+在输出的 weakSignals 数组中记录，格式：{topic:"话题", speaker:"说话人", timestamp:"时间戳", why:"为什么值得关注"}
 
-70分以上才算"匹配"。不相关的填 matched: false。
+## 置信度标准
+
+- **high（85-95分）**：原文逐句可回溯，有具体例子或数据。
+- **medium（45-65分）**：嘉宾确实说了这个意思，但措辞含糊或引用未指明的外部数据。
+- **low（25-45分）**：AI推测了未明说的含义，或原文极度含糊。
+
+## 热点匹配
+
+对照以下热点判断相关性（0-100分）：AI替代工作/白领失业、AI编程工具改变了什么、AI教育：学校该禁AI还是拥抱AI、空间智能/具身智能/机器人、AI创业/融资/估值、AI时代的个人成长/职业规划、大模型价格战/开源vs闭源。70分以上才算匹配。
 
 ## 数量要求
-提取 8-14 个有独立判断力的观点。宁可少一点也不要凑数的"正确废话"（如"AI很重要""我们要拥抱变化"这类）。如果逐字稿内容确实单薄，8个也可以。
+8-14个观点。每个维度至少2条。宁可少不凑数。
 
-## 输出格式
-必须是合法JSON，不要有任何包裹文字。格式如下：
+## 输出格式（合法JSON，无包裹文字）
 
-{"viewpoints":[...],"suggestedTitle":"根据内容自动生成的文章标题","suggestedSections":[{"id":"sec_intro","title":"引言标题"},{"id":"sec_body1","title":"正文一标题"},{"id":"sec_body2","title":"正文二标题"},{"id":"sec_outro","title":"结尾标题"}]}
+{"viewpoints":[...],"suggestedTitle":"12-20字有判断力的标题","suggestedSections":[{"id":"sec_intro","title":"引言标题"},{"id":"sec_body1","title":"正文一标题"},{"id":"sec_body2","title":"正文二标题"},{"id":"sec_outro","title":"结尾标题"},{"id":"sec_weak","title":"弱信号"}],"weakSignals":[{"topic":"话题","speaker":"说话人","timestamp":"00:00:00","why":"值得关注的原因"}],"meta":{"categoryCounts":{"high_thought":0,"current_answer":0,"info_gap":0}}}
 
-suggestedTitle要求：有判断力，12-20字，不能是中性描述。
-suggestedSections要求：根据内容的自然分段，给出4个章节标题，每个6-12字。
+suggestedTitle：有判断力，12-20字。
+suggestedSections：5个章节（含弱信号专区），标题6-12字。
+weakSignals：2-5个，嘉宾提过但没展开的有趣话题。`
 
-重要：
-- 所有字符串值必须用双引号，字符串内的双引号用反斜杠转义
-- evidenceQuotes里每条text必须是从SRT中原样摘录的原文
-- 不要在JSON后面加任何文字`
-
-const USER_TEMPLATE = `下面是访谈逐字稿（SRT格式，每段带说话人和时间戳）：
+const USER_TEMPLATE = `下面是访谈逐字稿（每段带时间戳和说话人）：
 
 %s
 
-请严格按照System Prompt的要求提取10-15个观点，输出完整JSON。记住：每个观点必须有evidenceQuotes（至少1条原文引用+时间戳），confidenceReason不能为空，hotspotMatch要有具体的matchReason。`
+请提取8-14个观点，确保三个维度每个至少2条。同时提取2-5个弱信号话题。输出完整JSON。每个观点必须有evidenceQuotes（至少1条原文引用+时间戳），如果有反观点填counterpoint字段（没有填null）。`
 
-// Preprocess SRT: inline timestamps into speaker lines, strip numbering, reduce ~25% tokens
 function preprocessSRT(srt: string): string {
   const lines = srt.split("\n")
   const out: string[] = []
   let pendingTS = ""
   for (const line of lines) {
     const t = line.trim()
-    // SRT number
     if (/^\d+$/.test(t)) continue
-    // Timestamp line → save for next speaker line
     const tsMatch = t.match(/^(\d{2}:\d{2}:\d{2}),\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}$/)
-    if (tsMatch) {
-      pendingTS = tsMatch[1]
-      continue
-    }
-    // Speaker line with pending timestamp
-    if (pendingTS && t.length > 0) {
-      out.push(`[${pendingTS}] ${line}`)
-      pendingTS = ""
-    } else if (t.length > 0) {
-      out.push(line)
-    }
+    if (tsMatch) { pendingTS = tsMatch[1]; continue }
+    if (pendingTS && t.length > 0) { out.push(`[${pendingTS}] ${line}`); pendingTS = "" }
+    else if (t.length > 0) out.push(line)
   }
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim()
 }
@@ -90,15 +79,22 @@ export async function POST(req: Request) {
     const data = extractJSON(result)
     const viewpoints = normalizeViewpoints(data)
 
-    // Extract suggested title & sections if provided
     const suggestedTitle = data.suggestedTitle || data.suggested_title || ""
     const suggestedSections = data.suggestedSections || data.suggested_sections || []
+    const weakSignals = data.weakSignals || data.weak_signals || []
 
-    if (viewpoints.length < 5) {
-      return NextResponse.json({ error: `观点不足：仅提取到 ${viewpoints.length} 个`, viewpoints }, { status: 500 })
+    // Validate category distribution
+    const cats: Record<string,number> = {}
+    for (const vp of viewpoints) { cats[vp.category] = (cats[vp.category]||0)+1 }
+    if (!cats["current_answer"] || cats["current_answer"] < 1) {
+      console.warn(`Category imbalance: ${JSON.stringify(cats)}`)
     }
 
-    return NextResponse.json({ viewpoints, suggestedTitle, suggestedSections })
+    if (viewpoints.length < 5) {
+      return NextResponse.json({ error: `观点不足：仅${viewpoints.length}个`, viewpoints }, { status: 500 })
+    }
+
+    return NextResponse.json({ viewpoints, suggestedTitle, suggestedSections, weakSignals })
   } catch (e: any) {
     console.error("Agent 1 error:", e.message)
     return NextResponse.json({ error: e.message || "分析失败" }, { status: 500 })

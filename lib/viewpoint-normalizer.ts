@@ -146,5 +146,6 @@ function normalizeOne(raw: any, index: number): any {
     hotspotMatch,
     editorialFlags,
     styleTags: raw.styleTags || raw.style_tags || raw.tags || [],
+    counterpoint: raw.counterpoint || null,
   }
 }

@@ -28,6 +28,7 @@ export default function Page() {
   const [loadingCheck, setLoadingCheck] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
   const [srtLines, setSrtLines] = useState<{ts: string; speaker: string; text: string}[]>([])
+  const [weakSignals, setWeakSignals] = useState<{topic:string;speaker:string;timestamp:string;why:string}[]>([])
 
   function buildSrtLookup(raw: string) {
     const lines: {ts: string; speaker: string; text: string}[] = []
@@ -138,6 +139,7 @@ export default function Page() {
           setSections(INITIAL_SECTIONS.map(s => ({ ...s, itemIds: [] })))
         }
         buildSrtLookup(text)
+        if (data.weakSignals) setWeakSignals(data.weakSignals)
         toast(`分析完成：${data.viewpoints.length} 个观点`)
       } else {
         throw new Error("未提取到观点")
@@ -334,7 +336,8 @@ export default function Page() {
           onRemove={removeFromOutline} onSelect={setSelectedId}
           onGenerateDraft={handleGenerateDraft} onSaveOutline={handleSaveOutline}
           onExportMarkdown={handleExportMarkdown} onFactCheck={handleFactCheck}
-          loadingDraft={loadingDraft} loadingCheck={loadingCheck} />
+          loadingDraft={loadingDraft} loadingCheck={loadingCheck}
+          weakSignals={weakSignals} />
       </main>
 
       <StatusBar extracted={viewpoints.length} used={usedCount} words={usedCount * 150 + 300} lastSaved="刚才" />
