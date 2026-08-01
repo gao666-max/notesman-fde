@@ -153,7 +153,7 @@ function extractViewpointFields(block: string): any {
       matched: block.includes('"matched": true') || !!g("topic"),
       topic: g("topic", ""),
       score: gn("score", gn("relevance_score", hotness / 100)),
-      reason: g("reason", g("match_reason", "")),
+      reason: g("match_reason", g("matchReason", "")),
     },
     editorialFlags: {
       factCheckNeeded: block.includes('"factCheckNeeded": true') || block.includes('"fact_check_needed": true'),
