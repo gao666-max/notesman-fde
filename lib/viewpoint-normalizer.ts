@@ -2,7 +2,9 @@
  * Normalize any reasonable viewpoint JSON format to our expected Viewpoint type.
  * DeepSeek sometimes invents its own field names - this maps them.
  */
-export function normalizeViewpoints(raw: any): any[] {
+import type { Viewpoint } from "./types"
+
+export function normalizeViewpoints(raw: any): Viewpoint[] {
   const arr = raw.viewpoints || raw.points || raw.items || raw.insights || raw.results || []
   if (!Array.isArray(arr)) {
     // Maybe the whole object is a single viewpoint wrapped?
@@ -13,7 +15,7 @@ export function normalizeViewpoints(raw: any): any[] {
   return arr.map((item: any, i: number) => normalizeOne(item, i))
 }
 
-function normalizeOne(raw: any, index: number): any {
+function normalizeOne(raw: any, index: number): Viewpoint {
   // Force id to vp_XX format always
   const rawId = String(raw.id || raw.viewpoint_id || raw.vp_id || "")
   const id = rawId.match(/^vp_/) ? rawId : `vp_${String(index + 1).padStart(2, "0")}`
@@ -61,6 +63,14 @@ function normalizeOne(raw: any, index: number): any {
   } else if (typeof rawConf === "string" && !isNaN(Number(rawConf))) {
     confidence = Math.min(99, Math.max(10, Number(rawConf)))
   } else {
+    // Derive confidence from evidence quality signals.
+    // When the model gives no confidence score, we use concrete signals:
+    //   - evidence count (more quotes = higher)
+    //   - summary length (longer = more substance)
+    //   - keyword richness (more tags = better categorized)
+    // The title-length jitter is a PLACEHOLDER to spread identical scores —
+    // not a meaningful metric. Production would use: editorial review scores,
+    // historical cross-validation from Agent 2, or model self-assessment.
     const summaryLen = (raw.summary || raw.content || "").length
     // Use multiple signals for natural variance: evidence count, summary length, keyword richness, title specificity
     const keywordBoost = Math.min(10, (raw.keywords || []).length * 2)

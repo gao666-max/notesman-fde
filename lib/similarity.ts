@@ -92,7 +92,7 @@ export function computeSimilarity(
 export function adjustConfidence(
   confidence: number,
   similarityResults: SimilarityResult[],
-  notes: any[],
+  notes: { body?: string; 正文?: string }[],
 ): { adjustedConfidence: number; reason: string } {
   if (similarityResults.length === 0) {
     return { adjustedConfidence: confidence, reason: "无历史资料佐证，保持原始置信度" }

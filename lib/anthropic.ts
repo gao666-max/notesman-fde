@@ -27,7 +27,7 @@ export async function callAgent(systemPrompt: string, userMessage: string, maxTo
   return text
 }
 
-export function extractJSON(text: string): any {
+export function extractJSON(text: string): Record<string, unknown> {
   let cleaned = text
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
@@ -45,13 +45,6 @@ export function extractJSON(text: string): any {
 
   // Repair 2: DeepSeek time range "HH:MM:SS - HH:MM:SS" → just the first timestamp
   cleaned = cleaned.replace(/"(\d{2}:\d{2}:\d{2})\s*[-–]\s*\d{2}:\d{2}:\d{2}"/g, '"$1"')
-
-  // Repair 3: unescaped quotes inside string values (common DeepSeek issue)
-  // This is aggressive but necessary — find "text": "..." patterns and escape inner quotes
-  cleaned = cleaned.replace(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g, (match) => {
-    // Already valid — keep as is
-    return match
-  })
 
   // Try parse
   try { return JSON.parse(cleaned) } catch (e1) {}
