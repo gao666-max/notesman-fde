@@ -60,9 +60,6 @@ export default function Page() {
     return srtLines.slice(start, end)
   }
 
-  const byId = allById
-
-  // Convert weakSignals to pseudo-viewpoints for card library
   const allViewpoints = useMemo(() => {
     const ws = (weakSignals || []).map((w, i) => ({
       id: `ws_${String(i+1).padStart(2,"0")}`,
