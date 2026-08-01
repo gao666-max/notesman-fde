@@ -341,6 +341,8 @@ export default function Page() {
       previousState: { title: prev.title, itemCount: prev.itemIds.length },
       currentState: { title, itemCount: currentItemIds.length },
       changes: [...added, ...removed, ...(titleChanged ? [titleChanged] : [])],
+      editorReason: "",
+      // Editor fills this in later: "为什么选A没选B"之类的决策理由
     }
 
     // Update last saved reference
