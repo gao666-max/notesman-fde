@@ -40,15 +40,28 @@ SRT 逐字稿 → Agent 1(观点提取) → Agent 2(复用判断) → [编辑拖
 
 ## 已知局限与改进计划
 
+### 已完成的
+
+| # | 事项 | 状态 |
+|---|------|------|
+| 1 | **单元测试**：`extractJSON`、`normalizeViewpoints`、`computeSimilarity`、`adjustConfidence`、`localGenerateDraft`、`localGenerateFactCheck` | ✅ 45 tests, 100% pass (`pnpm test`) |
+| 2 | **因果链提取器**：Agent 1 输出 `causalChain` 字段，前端蓝色递进箭头 UI + 琥珀色断点面板 | ✅ |
+| 3 | **编辑决策理由**：底部输入框，保存大纲时写入 `changeLog.editorReason` | ✅ |
+| 4 | **离线 fallback 对齐**：`localGenerateDraft` 输出瘦初稿格式（核心观点+引用+备注区+待办清单），与 Agent 3 格式一致 | ✅ |
+
+### 待完成（按优先级）
+
 | # | 局限 | 优先级 | 改进方案 | 预计工时 |
 |---|------|--------|---------|---------|
-| 1 | **零测试**：`extractJSON` 和 `normalizeViewpoints` 无单元测试 | P0 | 准备 20+ 个畸形 JSON 样本（时间范围、未转义引号、尾随逗号、字段缺失），用 vitest 覆盖所有 fallback 路径 | 4h |
-| 2 | **Agent 2 相似度**：关键词匹配而非向量化语义搜索 | P1 | 引入 `text-embedding-3-small` 或 `bge-large-zh`，对历史笔记预建向量索引，查询时做余弦相似度检索。方案设计中已有完整架构 | 8h |
-| 3 | **Agent 4 外检**：LLM 训练知识交叉验证，非实时网络搜索 | P1 | 搭建 RAG 管道：Embedding → 向量检索（Qdrant/Pinecone）→ Top-K=5 → LLM 判断。方案设计中已有技术路径 | 12h |
-| 4 | **因果链提取**：方案设计中规划但未实现 | P1 | 在 Agent 1 输出中增加 `causalChain` 字段（premise/reasoning/conclusion/missingSteps），前端渲染为可折叠的推理链面板 | 6h |
-| 5 | **编辑决策理由**：changeLog 记录了"做了什么"但没记录"为什么" | P2 | 在卡片详情弹窗增加"编辑备注"输入框，保存到 `editorNotes` 字段，随大纲一起导出 | 3h |
-| 6 | **弱信号**：不可拖拽、无正常置信度字段 | P2 | 给弱信号增加"跟踪/忽略"状态切换，编辑标记为"跟踪"后自动创建带提醒的跟踪卡片 | 4h |
-| 7 | **热点数据**：`data/hotspots.json` 手动维护，一个月后会过时 | P2 | 用 GitHub Actions 定时拉取 RSS/新闻 API 更新，或接入 Perplexity API 做实时热点检索 | 4h |
+| A | **Agent 2 向量化**：关键词匹配在几十篇时可用，笔记侠历史文章多起来后召回率会断崖式下降 | P1 | 引入 `text-embedding-3-small` 或 `bge-large-zh`，对历史笔记预建向量索引，查询时做余弦相似度检索。方案设计中已有完整架构 | 8h |
+| B | **Agent 4 RAG 外检**：事实核查全靠 LLM 训练知识做交叉验证，对嘉宾引用的具体研究（如"$12000 降到 $100"）LLM 可能不知道或编造 | P1 | 搭建 RAG 管道：Embedding → 向量检索（Qdrant/Pinecone）→ Top-K=5 → LLM 判断 + 来源链接。方案设计中已有技术路径 | 12h |
+| C | **page.tsx 膨胀**（~250 行）：Agent 调用、SRT 解析、状态管理全在一个组件 | P2 | 抽 4 个 custom hooks：`useAgent1`、`useAgent2`、`useAgent3`、`useAgent4`，`page.tsx` 只做组合 | 3h |
+| D | **弱信号**：不可拖拽、不可跟踪 | P2 | 增加"跟踪/忽略"状态切换，标记为"跟踪"后创建带提醒的卡片 | 4h |
+| E | **热点自动化**：`data/hotspots.json` 手动维护 | P2 | GitHub Actions 定时拉取 RSS/新闻 API 更新 | 4h |
+
+### 演示时如何说明
+
+面试官问"为什么没做向量化/RAG"：**"48 小时内优先跑通核心管线——观点提取、证据溯源、拖拽编辑、草稿生成、事实核查——这五步已经完整闭环。向量化和 RAG 是成熟方案（方案设计文档有完整技术路径），加进去主要是工程时间问题，没有架构风险。如果你给我一周，RAG 外检和向量化匹配会是第一优先级。"**
 
 ## 踩坑笔记
 
