@@ -186,12 +186,23 @@ export default function Page() {
       })
       if (!res.ok) throw new Error(await res.text())
       const result = await res.json()
-      const suggestions = result.suggestions || ""
+      const suggestions = result.report || ""
       const blob = new Blob([suggestions], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url; a.download = "reuse_suggestions.txt"; a.click()
       URL.revokeObjectURL(url)
+
+      // Apply confidence adjustments from Agent 2 back to viewpoints
+      if (result.confidenceAdjustments) {
+        setViewpoints((prev: any[]) => prev.map((vp: any) => ({
+          ...vp,
+          confidence: result.confidenceAdjustments[vp.id] || vp.confidence,
+          confidenceReason: result.confidenceAdjustments[vp.id] && result.confidenceAdjustments[vp.id] !== vp.confidence
+            ? `${vp.confidenceReason}（经历史素材校验后调整）`
+            : vp.confidenceReason,
+        })))
+      }
       setStatus("done")
       toast(`✅ 复用判断完成，报告已下载`)
     } catch (e: any) {

@@ -1,63 +1,29 @@
 import { NextResponse } from "next/server"
 import { callAgent, extractJSON } from "@/lib/anthropic"
 import { normalizeViewpoints } from "@/lib/viewpoint-normalizer"
+import hotspotsData from "@/data/hotspots.json"
 
 const SYSTEM_PROMPT = `你是笔记侠首席内容编辑。处理访谈逐字稿，提取结构化观点素材。
 
 ## 三个提取维度（每个维度至少2条，总数8-14条）
 
-1. **high_thought（高维思想）**：嘉宾与主流观点有明显差异的洞察。别人说不出来的东西。
-2. **current_answer（当下解答）**：嘉宾给出的具体建议或思考框架。读者看完能说"我知道该怎么做了"。
-3. **info_gap（信息差）**：行业内部数据、具体案例、前沿实践。行外人不知道的东西。
-
-强制要求：三个维度每个至少2条。如果某个维度真的找不到，在输出JSON的meta里标注原因。
+1. **high_thought（高维思想）**：嘉宾与主流观点有明显差异的洞察。
+2. **current_answer（当下解答）**：嘉宾给出的具体建议或思考框架。
+3. **info_gap（信息差）**：行业内部数据、具体案例、前沿实践。
 
 ## 反观点检测（counterpoint）
-
-对每个观点，检查全文中是否有其他说话人的矛盾或不同意见。不要求每条都有。
-- 嘉宾A说X，嘉宾B有没有说非X或对X有保留？
-- 同一个嘉宾有没有在别处说了和这个观点不完全一致的话？
-- 如果有，在 counterpoint 字段记录（说话人+原文摘要）。没有就填 null。
+对每个观点，检查全文中是否有其他说话人的矛盾或不同意见。有就填，没有填null。
 
 ## 弱信号提取（weakSignals）
-
-逐字稿中嘉宾随口提到但没有展开、但可能值得后续追踪的话题点。标准：
-- 嘉宾提了一嘴但主持人没追问、嘉宾自己也没展开
-- 置信度低但方向上有意思
-- 可能是未来选题或延伸报道的线索
-在输出的 weakSignals 数组中记录，格式：{topic:"话题", speaker:"说话人", timestamp:"时间戳", why:"为什么值得关注"}
+逐字稿中嘉宾随口提到但没有展开、但可能值得后续追踪的话题点。2-5个。
 
 ## 置信度标准
-
-- **high（85-95分）**：原文逐句可回溯，有具体例子或数据。
-- **medium（45-65分）**：嘉宾确实说了这个意思，但措辞含糊或引用未指明的外部数据。
-- **low（25-45分）**：AI推测了未明说的含义，或原文极度含糊。
-
-## 热点匹配（基于访谈时间2026年7月的真实热点）
-
-这个访谈发生在2026年7月。请结合当时AI行业的热点话题和公共讨论方向，对每个观点判断相关性：
-- 每个热点必须具体描述（如"2026年6月苹果/微软相继宣布用AI替代客服岗位"），不能只写"AI替代工作"这种笼统词
-- hotness 打分依据：该观点是否直接回应了当时某个具体热点事件或公共讨论？
-- 90-100分：观点直接回应了当时的头条话题
-- 70-89分：观点与热点方向一致但非直接回应
-- 70分以下不标注为"匹配"
+- high（85-95分）：原文逐句可回溯，有具体例子或数据。
+- medium（45-65分）：嘉宾确实说了这个意思，但措辞含糊或引用未指明的外部数据。
+- low（25-45分）：AI推测了未明说的含义，或原文极度含糊。
 
 ## 数量要求
-8-14个观点。每个维度至少2条。宁可少不凑数。
-
-## 输出格式（合法JSON，无包裹文字）
-
-{"viewpoints":[...],"suggestedTitle":"12-20字有判断力的标题","suggestedSections":[{"id":"sec_intro","title":"引言标题"},{"id":"sec_body1","title":"正文一标题"},{"id":"sec_body2","title":"正文二标题"},{"id":"sec_outro","title":"结尾标题"},{"id":"sec_weak","title":"弱信号"}],"weakSignals":[{"topic":"话题","speaker":"说话人","timestamp":"00:00:00","why":"值得关注的原因"}],"meta":{"categoryCounts":{"high_thought":0,"current_answer":0,"info_gap":0}}}
-
-suggestedTitle：有判断力，12-20字。
-suggestedSections：5个章节（含弱信号专区），标题6-12字。
-weakSignals：2-5个，嘉宾提过但没展开的有趣话题。`
-
-const USER_TEMPLATE = `下面是访谈逐字稿（每段带时间戳和说话人）：
-
-%s
-
-请提取8-14个观点，确保三个维度每个至少2条。同时提取2-5个弱信号话题。输出完整JSON。每个观点必须有evidenceQuotes（至少1条原文引用+时间戳），如果有反观点填counterpoint字段（没有填null）。`
+8-14个观点。每个维度至少2条。`
 
 function preprocessSRT(srt: string): string {
   const lines = srt.split("\n")
@@ -79,21 +45,34 @@ export async function POST(req: Request) {
     const { srt } = await req.json()
     if (!srt) return NextResponse.json({ error: "缺少 SRT 文本" }, { status: 400 })
 
-    const processed = preprocessSRT(srt)
-    const result = await callAgent(SYSTEM_PROMPT, USER_TEMPLATE.replace("%s", processed), 32000)
+    // Build real hotspot context from timeline data
+    const hotspots = hotspotsData.timeline
+      .sort((a,b) => b.intensity - a.intensity)
+      .map(h => `[${h.date}] ${h.event}（话题：${h.topics.join("、")}）`)
+      .join("\n")
+
+    const userMsg = `下面是访谈逐字稿：
+
+${preprocessSRT(srt)}
+
+## 2026年6-7月AI行业真实热点时间线（用于热点匹配）
+
+${hotspots}
+
+## 输出要求
+请提取8-14个观点，每个维度至少2条。同时提取2-5个弱信号。输出完整JSON。
+
+格式：{"viewpoints":[...],"suggestedTitle":"标题","suggestedSections":[...],"weakSignals":[...],"meta":{...}}
+
+热点匹配要求：不是每个观点都要匹配，但要给出hotspotMatch字段。如果观点与上述热点时间线中的某个事件直接相关，matched填true，topic填具体事件（如"2026-07-28 Sam Altman预测2027年AGI雏形引发争论"），不要只写笼统词如"AI替代工作"。`
+
+    const result = await callAgent(SYSTEM_PROMPT, userMsg, 32000)
     const data = extractJSON(result)
     const viewpoints = normalizeViewpoints(data)
 
-    const suggestedTitle = data.suggestedTitle || data.suggested_title || ""
-    const suggestedSections = data.suggestedSections || data.suggested_sections || []
-    const weakSignals = data.weakSignals || data.weak_signals || []
-
-    // Validate category distribution
-    const cats: Record<string,number> = {}
-    for (const vp of viewpoints) { cats[vp.category] = (cats[vp.category]||0)+1 }
-    if (!cats["current_answer"] || cats["current_answer"] < 1) {
-      console.warn(`Category imbalance: ${JSON.stringify(cats)}`)
-    }
+    const suggestedTitle = data.suggestedTitle || ""
+    const suggestedSections = data.suggestedSections || []
+    const weakSignals = data.weakSignals || []
 
     if (viewpoints.length < 5) {
       return NextResponse.json({ error: `观点不足：仅${viewpoints.length}个`, viewpoints }, { status: 500 })

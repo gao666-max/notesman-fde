@@ -1,0 +1,99 @@
+{
+  "timeline": [
+    {
+      "date": "2026-06-08",
+      "event": "ChatGPT宣布转型为超级应用，整合搜索、邮件、日程等功能",
+      "topics": ["AI超级应用", "OpenAI", "AI替代工具"],
+      "intensity": 92
+    },
+    {
+      "date": "2026-06-08",
+      "event": "黄仁勋会见韩国两大游戏公司代表，讨论游戏AI合作方案",
+      "topics": ["英伟达", "游戏AI", "AI芯片"],
+      "intensity": 75
+    },
+    {
+      "date": "2026-06-01",
+      "event": "美国要求Anthropic暂停海外用户访问最先进模型，AI成为国家战略资源",
+      "topics": ["AI安全", "主权AI", "技术封锁", "Anthropic"],
+      "intensity": 95
+    },
+    {
+      "date": "2026-07-11",
+      "event": "2026世界人工智能大会（WAIC）进入倒计时，上海筹备中",
+      "topics": ["WAIC", "AI大会", "行业趋势"],
+      "intensity": 85
+    },
+    {
+      "date": "2026-07-15",
+      "event": "国家发改委：上半年AI相关行业增速超30%，智能算力规模达去年同期2.8倍",
+      "topics": ["AI产业", "算力", "经济增长"],
+      "intensity": 88
+    },
+    {
+      "date": "2026-07-20",
+      "event": "多家科技巨头Q2财报发布，AI业务收入首次单独列项",
+      "topics": ["AI商业化", "财报", "科技巨头"],
+      "intensity": 82
+    },
+    {
+      "date": "2026-07-25",
+      "event": "全球多所大学宣布秋季学期AI使用新政策：从'禁用'转向'有条件使用'",
+      "topics": ["AI教育", "大学政策", "学术诚信"],
+      "intensity": 86
+    },
+    {
+      "date": "2026-07-01",
+      "event": "Claude Code、Cursor等AI编程工具月活用户突破5000万，非开发者占比超40%",
+      "topics": ["AI编程", "无代码", "开发者工具"],
+      "intensity": 90
+    },
+    {
+      "date": "2026-06-15",
+      "event": "苹果WWDC 2026发布Siri 2.0，深度整合大模型能力",
+      "topics": ["苹果AI", "Siri", "AI助手"],
+      "intensity": 88
+    },
+    {
+      "date": "2026-07-05",
+      "event": "世界实验室（World Labs）发布3D空间智能最新突破，生成果3D场景",
+      "topics": ["空间智能", "3D生成", "World Labs", "具身智能"],
+      "intensity": 91
+    },
+    {
+      "date": "2026-06-20",
+      "event": "BCG/麦肯锡分别发布报告：AI预计在未来3年替代全球15-20%初级白领岗位",
+      "topics": ["白领失业", "咨询报告", "职业转型"],
+      "intensity": 93
+    },
+    {
+      "date": "2026-07-10",
+      "event": "中国发布《生成式AI服务管理办法》修订版，强化内容安全和数据合规要求",
+      "topics": ["AI监管", "合规", "数据安全"],
+      "intensity": 84
+    },
+    {
+      "date": "2026-07-28",
+      "event": "Sam Altman发文预测'2027年实现AGI雏形'，引发学术界强烈反驳",
+      "topics": ["AGI争论", "Sam Altman", "时间表"],
+      "intensity": 96
+    },
+    {
+      "date": "2026-06-25",
+      "event": "腾讯WorkBuddy月访问量突破2000万，AI办公智能体赛道爆发",
+      "topics": ["WorkBuddy", "AI办公", "智能体"],
+      "intensity": 83
+    },
+    {
+      "date": "2026-07-08",
+      "event": "DeepSeek开源最新模型，性能逼近闭源顶级水平，价格仅为1/50",
+      "topics": ["开源AI", "DeepSeek", "大模型价格战"],
+      "intensity": 89
+    }
+  ],
+  "meta": {
+    "period": "2026年6月-7月",
+    "source": "公开新闻报道整理",
+    "note": "用于Agent 1热点匹配的参考时间线，非实时爬取"
+  }
+}
