@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Quote, AlertTriangle, Zap, Flame, CheckCircle, BookOpen } from "lucide-react"
+import { X, Quote, AlertTriangle, Zap, Flame, CheckCircle, BookOpen, Link2, AlertCircle } from "lucide-react"
 import type { Viewpoint } from "@/lib/types"
 import { levelBadgeClass, levelDotBg, levelLabel, isHot } from "@/lib/viewpoint-utils"
 import { cn } from "@/lib/utils"
@@ -58,6 +58,55 @@ export function DetailModal({ vp, open, onClose, srtContext }: DetailModalProps)
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">一句话摘要</h4>
           <p className="mt-1.5 text-sm leading-relaxed">{vp.summary}</p>
         </div>
+
+        {/* Causal Chain */}
+        {vp.causalChain && (
+          <div className="mt-4">
+            <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Link2 className="size-3.5" /> 因果链
+            </h4>
+            <div className="rounded-lg border border-blue-200 bg-blue-50/50 px-3.5 py-3 space-y-2 dark:bg-blue-950/20 dark:border-blue-800">
+              <div className="flex gap-2">
+                <span className="text-xs font-semibold text-blue-600 shrink-0 mt-0.5">前提</span>
+                <span className="text-sm">{vp.causalChain.premise}</span>
+              </div>
+              <div className="flex justify-center">
+                <span className="text-blue-400 text-lg">↓</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-xs font-semibold text-blue-600 shrink-0 mt-0.5">推理</span>
+                <span className="text-sm">{vp.causalChain.reasoning}</span>
+              </div>
+              <div className="flex justify-center">
+                <span className="text-blue-400 text-lg">↓</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-xs font-semibold text-blue-600 shrink-0 mt-0.5">结论</span>
+                <span className="text-sm font-medium">{vp.causalChain.conclusion}</span>
+              </div>
+              {vp.causalChain.evidence?.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <span className="text-xs text-muted-foreground">证据：</span>
+                  {vp.causalChain.evidence.map((e: any, i: number) => (
+                    <div key={i} className="text-xs text-muted-foreground mt-1">
+                      [{e.segment}] "{e.text}"
+                    </div>
+                  ))}
+                </div>
+              )}
+              {vp.causalChain.missingSteps?.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <AlertCircle className="size-3.5" /> 推理链断点
+                  </div>
+                  {vp.causalChain.missingSteps.map((step: string, i: number) => (
+                    <div key={i} className="text-xs text-amber-600 dark:text-amber-400 mt-1 ml-5">• {step}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Counterpoint */}
         {vp.counterpoint && (

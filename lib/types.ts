@@ -41,6 +41,15 @@ export interface Viewpoint {
   editorialFlags: EditorialFlags
   styleTags: string[]
   counterpoint?: { speaker: string; summary: string } | null
+  causalChain?: CausalChain | null
+}
+
+export interface CausalChain {
+  premise: string
+  reasoning: string
+  conclusion: string
+  evidence: { segment: string; text: string }[]
+  missingSteps: string[]
 }
 
 export interface WeakSignal {

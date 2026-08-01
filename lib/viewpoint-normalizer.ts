@@ -148,5 +148,6 @@ function normalizeOne(raw: any, index: number): any {
     editorialFlags,
     styleTags: raw.styleTags || raw.style_tags || raw.tags || [],
     counterpoint: raw.counterpoint || null,
+    causalChain: raw.causalChain || raw.causal_chain || null,
   }
 }
