@@ -32,7 +32,7 @@
 | 产出 1：需求澄清 | `docs/requirements_definition.docx` |
 | 产出 2：方案设计 | `docs/solution_design.docx` |
 | 产出 3：可运行原型 | 根目录 `pnpm dev` 启动 + `samples/` 下的运行结果 |
-| 产出 4：讲解视频 | 待提交（脚本在 `docs/video_script.md`） |
+| 产出 4：讲解视频 | 待录制（脚本在 `docs/video_script.md`） |
 
 ## 数据来源
 
