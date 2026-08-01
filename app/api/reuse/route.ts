@@ -91,9 +91,9 @@ ${noteList}
     report += matchReport
     report += "\n\n---\n\n"
     report += "## 特别提醒\n\n"
-    report += "- 如果匹配中出现"同一场·不复用"，说明该笔记和当前逐字稿是同一场访谈——这是题目数据中故意设置的内容陷阱。直接复用会造成文章重复\n"
-    report += "- "有限复用"的笔记可以作为概念佐证或风格参考，但不应直接拼接原文\n"
-    report += "- 标注"过时"的笔记仅限背景参考\n"
+    report += '- 如果匹配中出现"同一场·不复用"，说明该笔记和当前逐字稿是同一场访谈，这是题目数据中故意设置的内容陷阱。直接复用会造成文章重复\n'
+    report += '- "有限复用"的笔记可以作为概念佐证或风格参考，但不应直接拼接原文\n'
+    report += '- 标注"过时"的笔记仅限背景参考\n'
 
     // Phase 3: Extract confidence adjustments from LLM match results
     const confidenceAdjustments: Record<string, number> = {}
