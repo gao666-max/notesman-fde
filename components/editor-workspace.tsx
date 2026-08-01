@@ -99,8 +99,6 @@ export function EditorWorkspace({
         </div>
       </div>
 
-        )}
-
       {/* Weak Signals Section */}
       {weakSignals && weakSignals.length > 0 && (
         <div style={{margin:"16px 0",border:"2px dashed #fbbf24",borderRadius:12,padding:16,background:"rgba(251,191,36,0.06)"}}>
