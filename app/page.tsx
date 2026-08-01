@@ -28,6 +28,7 @@ export default function Page() {
   const [loadingCheck, setLoadingCheck] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
   const [cachedArticle, setCachedArticle] = useState("")
+  const [editorReason, setEditorReason] = useState("")
   const [srtLines, setSrtLines] = useState<{ts: string; speaker: string; text: string}[]>([])
   const [weakSignals, setWeakSignals] = useState<{topic:string;speaker:string;timestamp:string;why:string}[]>([])
 
@@ -341,7 +342,7 @@ export default function Page() {
       previousState: { title: prev.title, itemCount: prev.itemIds.length },
       currentState: { title, itemCount: currentItemIds.length },
       changes: [...added, ...removed, ...(titleChanged ? [titleChanged] : [])],
-      editorReason: "",
+      editorReason: editorReason || "",
       // Editor fills this in later: "为什么选A没选B"之类的决策理由
     }
 
@@ -415,6 +416,18 @@ export default function Page() {
       </main>
 
       <StatusBar extracted={allViewpoints.length} used={usedCount} words={usedCount * 150 + 300} lastSaved="刚才" />
+
+      {/* Editor reason input */}
+      <div className="border-t bg-card px-4 py-2 flex items-center gap-2">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">编辑决策理由：</span>
+        <input
+          className="flex-1 h-7 rounded-md border bg-background px-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          placeholder="为什么选这些观点？为什么这样排序？..."
+          value={editorReason}
+          onChange={(e) => setEditorReason(e.target.value)}
+        />
+        <span className="text-[10px] text-muted-foreground whitespace-nowrap">保存大纲时记录</span>
+      </div>
 
       <DetailModal vp={selectedVp!} open={!!selectedVp} onClose={() => setSelectedId(null)}
         srtContext={selectedVp ? getContext(selectedVp.timestamp) : []} />
