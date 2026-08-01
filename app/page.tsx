@@ -82,7 +82,7 @@ export default function Page() {
     return [...viewpoints, ...ws]
   }, [viewpoints, weakSignals])
 
-  // Rebuild byId to include weak signals
+  // Rebuild allById to include weak signals
   const allById = useMemo(() => new Map(allViewpoints.map((v) => [v.id, v])), [allViewpoints])
   const speakers = useMemo(() => Array.from(new Set(allViewpoints.map((v) => v.speaker))), [allViewpoints])
   const assignedIds = useMemo(() => new Set(sections.flatMap((s) => s.itemIds)), [sections])
@@ -226,13 +226,16 @@ export default function Page() {
 
   // --- GENERATE DRAFT → Agent 3 ---
   const handleGenerateDraft = useCallback(async () => {
+    const usedIds = sections.flatMap(s => s.itemIds)
+    if (usedIds.length === 0) { toast("请先拖拽至少一个观点"); return }
+    const usedVps = usedIds.map(id => allById.get(id)).filter(Boolean) as any[]
     setLoadingDraft(true)
     toast("Agent 3 正在生成文章…")
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, viewpoints, sections, sourceName }),
+        body: JSON.stringify({ title, viewpoints: usedVps, sections, sourceName }),
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
@@ -246,7 +249,7 @@ export default function Page() {
     } catch (e: any) {
       // Fallback: local article generator (produces natural prose, not bullet points)
       toast(`API 不可用，使用本地引擎生成`)
-      const article = localGenerateDraft(title, sourceName, sections, byId)
+      const article = localGenerateDraft(title, sourceName, sections, allById)
       const blob = new Blob([article], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -255,10 +258,13 @@ export default function Page() {
       toast(`✅ 草稿已生成（${article.length} 字）`)
     }
     setLoadingDraft(false)
-  }, [title, viewpoints, sections, sourceName, byId])
+  }, [title, viewpoints, sections, sourceName, allById])
 
   // --- FACT CHECK → Agent 4 ---
   const handleFactCheck = useCallback(async () => {
+    const usedIds = sections.flatMap(s => s.itemIds)
+    if (usedIds.length === 0) { toast("请先拖拽至少一个观点"); return }
+    const usedVps = usedIds.map(id => allById.get(id)).filter(Boolean) as any[]
     setLoadingCheck(true)
     toast("Agent 4 正在核查…")
     try {
@@ -266,14 +272,14 @@ export default function Page() {
       const genRes = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, viewpoints, sections, sourceName }),
+        body: JSON.stringify({ title, viewpoints: usedVps, sections, sourceName }),
       })
       const article = genRes.ok ? (await genRes.json()).article || "" : ""
 
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ article, viewpoints }),
+        body: JSON.stringify({ article, viewpoints: usedVps }),
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
@@ -285,7 +291,7 @@ export default function Page() {
       toast("✅ 核查报告已生成")
     } catch (e: any) {
       toast(`核查失败，使用本地引擎：${e.message}`)
-      const report = localGenerateFactCheck(title, sourceName, sections, byId)
+      const report = localGenerateFactCheck(title, sourceName, sections, allById)
       const blob = new Blob([report], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -293,7 +299,7 @@ export default function Page() {
       URL.revokeObjectURL(url)
     }
     setLoadingCheck(false)
-  }, [title, viewpoints, sections, sourceName, byId])
+  }, [title, viewpoints, sections, sourceName, allById])
 
   // --- SAVE OUTLINE ---
   const handleSaveOutline = useCallback(() => {
@@ -301,7 +307,7 @@ export default function Page() {
       title, sourceName,
       sections: sections.map(s => ({
         id: s.id, title: s.title, itemIds: s.itemIds,
-        items: s.itemIds.map(id => { const vp = byId.get(id); return vp ? { id: vp.id, title: vp.title, speaker: vp.speaker, timestamp: vp.timestamp } : null }).filter(Boolean),
+        items: s.itemIds.map(id => { const vp = allById.get(id); return vp ? { id: vp.id, title: vp.title, speaker: vp.speaker, timestamp: vp.timestamp } : null }).filter(Boolean),
       })),
       savedAt: new Date().toISOString(),
     }
@@ -311,7 +317,7 @@ export default function Page() {
     a.href = url; a.download = "outline_backup.json"; a.click()
     URL.revokeObjectURL(url)
     toast("💾 大纲已保存")
-  }, [title, sourceName, sections, byId])
+  }, [title, sourceName, sections, allById])
 
   // --- EXPORT OUTLINE MD ---
   const handleExportMarkdown = useCallback(() => {
@@ -319,7 +325,7 @@ export default function Page() {
     sections.forEach((sec) => {
       md += `## ${sec.title}\n\n`
       sec.itemIds.forEach((vpId, i) => {
-        const vp = byId.get(vpId); if (!vp) return
+        const vp = allById.get(vpId); if (!vp) return
         const conf = vp.level === "high" ? "🟢" : vp.level === "mid" ? "🟡" : "🔴"
         const hot = vp.hotspotMatch?.matched ? "🔥" : ""
         md += `${i + 1}. ${conf}${hot} ${vp.title} — ${vp.speaker} [${vp.timestamp}]\n`
@@ -334,7 +340,7 @@ export default function Page() {
     a.href = url; a.download = "outline_structure.txt"; a.click()
     URL.revokeObjectURL(url)
     toast("📋 大纲已导出")
-  }, [title, sourceName, sections, byId])
+  }, [title, sourceName, sections, allById])
 
   const usedCount = assignedIds.size
 
@@ -345,7 +351,7 @@ export default function Page() {
         onReanalyze={handleReanalyze} onExport={handleGenerateDraft} />
 
       <FilterBar filters={filters} speakers={speakers} onChange={setFilters} />
-      <QuadrantOverview viewpoints={allViewpoints} selectedId={selectedId} onSelect={setSelectedId} />
+      <QuadrantOverview viewpoints={viewpoints} selectedId={selectedId} onSelect={setSelectedId} />
 
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <CardLibrary viewpoints={libraryViewpoints} draggingId={draggingId} selectedId={selectedId}

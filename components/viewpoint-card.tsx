@@ -29,8 +29,9 @@ export function ViewpointCard({
   const outline = variant === "outline"
   return (
     <div
-      draggable
+      draggable={vp.category !== "weak_signal"}
       onDragStart={(e) => {
+        if (vp.category === "weak_signal") { e.preventDefault(); return }
         e.dataTransfer.effectAllowed = "move"
         e.dataTransfer.setData("text/plain", vp.id)
         onDragStart?.(vp.id)
@@ -97,7 +98,7 @@ export function ViewpointCard({
           )}
         </div>
 
-        {onAdd && (
+        {onAdd && vp.category !== "weak_signal" && (
           <button
             type="button"
             aria-label={`将 ${vp.id} 加入大纲`}
