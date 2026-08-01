@@ -34,7 +34,7 @@ ${hotspotsData.timeline.sort((a,b) => b.intensity-a.intensity).map(h => `- [${h.
 
 {"viewpoints":[...],"suggestedTitle":"根据内容自动生成的文章标题","suggestedSections":[{"id":"sec_intro","title":"引言标题"},{"id":"sec_body1","title":"正文一标题"},{"id":"sec_body2","title":"正文二标题"},{"id":"sec_outro","title":"结尾标题"}],"weakSignals":[{"topic":"话题","speaker":"说话人","timestamp":"00:00:00","why":"原因"}]}
 
-suggestedTitle要求：必须有反常识张力。好的例子："AI不会淘汰人，但会淘汰没有能动性的人"。坏的例子（禁止）："AI时代XX生存法则""从恐惧到驾驭""拥抱变化拥抱未来""XX革命""XX之道"。标题里不要出现"AI时代""从……到……""革命""生存法则""之道""驾驭"这些词。从嘉宾原话里找金句做标题。
+suggestedTitle要求：从嘉宾原话中找最有冲击力的一句做标题。12-20字。必须是一个具体的判断，不能是主题描述。不要用"AI时代""从……到……""革命""生存法则""之道""驾驭""拥抱"这些AI味词汇。如果同一句嘉宾原话在逐字稿中反复出现，优先选它；但不要每次都选同一句——选最有反常识张力那句。
 suggestedSections要求：根据内容的自然分段，给出4个章节标题，每个6-12字。
 weakSignals：2-5个嘉宾提过但未展开的弱信号话题。
 

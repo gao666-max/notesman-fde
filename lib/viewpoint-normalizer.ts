@@ -62,25 +62,25 @@ function normalizeOne(raw: any, index: number): any {
     confidence = Math.min(99, Math.max(10, Number(rawConf)))
   } else {
     const summaryLen = (raw.summary || raw.content || "").length
-    let base = 55
-    if (count >= 2 && summaryLen > 60) base = 82
-    else if (count >= 2 && summaryLen > 30) base = 72
-    else if (count >= 1 && summaryLen > 40) base = 66
-    else if (count >= 1 && summaryLen > 15) base = 56
-    else base = 42
-    confidence = base + Math.floor((raw.title || "").length % 11) - 5
-    confidence = Math.min(95, Math.max(25, confidence))
+    // Use multiple signals for natural variance: evidence count, summary length, keyword richness, title specificity
+    const keywordBoost = Math.min(10, (raw.keywords || []).length * 2)
+    const summaryBoost = summaryLen > 80 ? 12 : summaryLen > 50 ? 7 : summaryLen > 25 ? 2 : -5
+    const evidenceBoost = count >= 3 ? 15 : count >= 2 ? 8 : count >= 1 ? 0 : -10
+    // Title-based jitter for spread (wider range: -8 to +10)
+    const titleJitter = ((raw.title || "").length * 7 + (raw.speaker || "").length * 3) % 17 - 8
+    confidence = 55 + keywordBoost + summaryBoost + evidenceBoost + titleJitter
+    confidence = Math.min(95, Math.max(20, confidence))
   }
 
   let level = (raw.level || raw.confidence_level || "").toLowerCase()
   if (!level || !["high","mid","medium","low"].includes(level)) {
-    if (confidence >= 75) level = "high"
-    else if (confidence >= 50) level = "mid"
+    if (confidence >= 72) level = "high"
+    else if (confidence >= 45) level = "mid"
     else level = "low"
   }
   if (level === "medium") level = "mid"
 
-  // Hotness — derive from hotspot signals if model doesn't give a number
+  // Hotness — derive from multiple signals with wider spread
   let hotness: number
   if (typeof raw.hotness === "number" && !isNaN(raw.hotness)) {
     hotness = Math.min(99, Math.max(5, raw.hotness))
@@ -89,14 +89,15 @@ function normalizeOne(raw: any, index: number): any {
   } else {
     const hasHotTopic = !!(raw.hotspotMatch?.matched || raw.hotspot_match?.matched || raw.hotspot?.matched)
     const cat = (raw.category || raw.dimension || "").toLowerCase()
-    let base = 60
-    if (hasHotTopic) base = 85
-    else if (cat.includes("current") || cat.includes("answer")) base = 76
-    else if (cat.includes("info") || cat.includes("gap")) base = 70
-    else base = 62
-    // Natural variance from title length
-    hotness = base + Math.floor((raw.title || "").length % 15) - 7
-    hotness = Math.min(98, Math.max(25, hotness))
+    let base = 55
+    if (hasHotTopic) base = 80
+    else if (cat.includes("current") || cat.includes("answer")) base = 70
+    else if (cat.includes("info") || cat.includes("gap")) base = 62
+    else base = 52
+    // Wider jitter for hotness spread
+    const hotJitter = ((raw.title || "").length * 11 + (raw.summary || "").length * 3) % 19 - 9
+    hotness = base + hotJitter
+    hotness = Math.min(98, Math.max(22, hotness))
   }
 
   // Hotspot match
