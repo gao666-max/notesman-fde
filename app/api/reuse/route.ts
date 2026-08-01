@@ -15,106 +15,131 @@ export async function POST(req: Request) {
       })
     }
 
-    // Phase 1: LLM-powered multi-dimensional matching
-    // Drop keyword similarity — let DeepSeek do semantic understanding
-    let matchReport = ""
+    // ══════ Phase 1: Same-field detection ══════
+    // LLM only answers one question: which notes are from the same interview?
+    // Output is a simple list of note indices — no scores, no hedging.
+    const noteDigests = notesArray.map((n: any, i: number) => {
+      const title = n.标题 || n.title || `笔记${i + 1}`
+      const body = (n.正文 || n.body || "").substring(0, 800)
+      return `[笔记${i + 1}] ${title}\n${body.substring(0, 500)}`
+    }).join("\n\n---\n\n")
+
+    const detectPrompt = `以下是当前访谈逐字稿和 ${notesArray.length} 篇历史笔记。
+
+你的任务只有一个：找出哪些历史笔记和当前逐字稿是同一场访谈。
+
+判断标准：笔记内容和当前逐字稿讨论的是同一场对话——嘉宾相同、话题相同、原文几乎逐句对应。如果只是主题相似但嘉宾不同、或对话完全不同，就不是同一场。
+
+输出格式：只输出笔记编号，用逗号分隔。如果一篇都不是同一场，输出"无"。
+
+笔记编号示例：1,3（表示笔记1和笔记3是同一场访谈）`
+
+    let sameFieldIds = new Set<number>()
+    try {
+      const detectionResult = await callAgent(
+        detectPrompt,
+        `当前访谈：AI、工作方式变化与个体能动性的深度对话\n\n历史笔记：\n${noteDigests}`,
+        2000
+      )
+      const numbers = detectionResult.match(/\d+/g)
+      if (numbers) {
+        for (const n of numbers) {
+          const idx = parseInt(n)
+          if (idx >= 1 && idx <= notesArray.length) sameFieldIds.add(idx)
+        }
+      }
+    } catch (e: any) {
+      console.error("Phase 1 detection failed:", e.message)
+    }
+
+    // ══════ Phase 2: Semantic matching (same-field notes EXCLUDED) ══════
+    const excludedLabels = sameFieldIds.size > 0
+      ? Array.from(sameFieldIds).map(i => `笔记${i}`).join("、")
+      : "无"
 
     const vpList = (viewpoints || []).map((v: any) =>
       `[${v.id}] ${v.title}\n  摘要：${v.summary || ""}\n  说话人：${v.speaker || ""}\n  关键词：${(v.keywords || []).join("、")}`
     ).join("\n\n")
 
-    const noteList = notesArray.map((n: any, i: number) => {
-      const title = n.标题 || n.title || `笔记${i + 1}`
+    const remainingNotes = notesArray.map((n: any, i: number) => {
+      const idx = i + 1
+      if (sameFieldIds.has(idx)) return null
+      const title = n.标题 || n.title || `笔记${idx}`
       const date = n.日期 || n.date || ""
       const topic = n.主题 || n.topic || ""
-      const body = (n.正文 || n.body || "").substring(0, 600)
+      const body = (n.正文 || n.body || "").substring(0, 500)
       const readers = n.适用读者 || n.readers || ""
       const scope = n.可引用范围 || n.quoteScope || ""
-      return `[笔记${i + 1}] 标题：${title}\n  日期：${date}\n  主题：${topic}\n  适用读者：${readers}\n  可引用范围：${scope}\n  正文摘要：${body.substring(0, 500)}`
-    }).join("\n\n")
+      return `[笔记${idx}] 标题：${title}\n  日期：${date}\n  主题：${topic}\n  适用读者：${readers}\n  可引用范围：${scope}\n  正文摘要：${body}`
+    }).filter(Boolean).join("\n\n")
 
-    const matchPrompt = `你是笔记侠资料编辑。你有 ${viewpoints.length} 个从当前访谈提取的观点，和 ${notesArray.length} 篇历史笔记。
+    const matchPrompt = `你是笔记侠资料编辑。
+
+关键前提：以下笔记已被代码层面排除（同一场访谈）：${excludedLabels}。你不要再匹配这些笔记。
 
 ## 任务
-对每个观点，判断哪些历史笔记与之相关。不是关键词匹配，是语义理解——理解观点在说什么，再判断笔记里有没有类似内容。
+对每个观点，从剩余的 ${notesArray.length - sameFieldIds.size} 篇笔记中找最相关的 0-3 篇。
 
 ## 判断维度
-1. **内容唯一性**：这篇笔记和当前观点是同一场访谈吗？（如果是，标注"同一场·不复用"）
-2. **语义相关性**：笔记的核心论述是否和当前观点在说同一件事？
-3. **观点增强/矛盾**：笔记能补充、强化、或反驳当前观点吗？
-4. **时效性**：笔记的日期是否过时？（2023年以前 → 仅背景参考）
-5. **可引用性**：笔记的引用范围是否允许当前用途？
+1. 语义相关性：笔记核心论述和当前观点在说同一件事吗？
+2. 观点增强/矛盾：笔记能补充、强化、或反驳当前观点吗？
+3. 时效性：日期过时了吗？（2023年以前 → 仅背景参考）
+4. 可引用性：引用范围允许吗？
 
-## 关键硬规则
-
-**同一场检测优先级最高**：如果某篇笔记和当前逐字稿来自同一场访谈（内容高度重叠、嘉宾相同、讨论的是同一场对话、逐字稿原文几乎逐句对应），无论语义相似度多高，必须判定为"同一场·不复用"，分数强制设为 0。同一场笔记占一行就够，不要把篇幅全给它——精力花在找其余 7 篇真正能用的笔记上。
-
-**不要只看标题**：标题可能不同，但正文内容如果是同一场对话的转述，就是同一场。
-
-## 输出格式
-
-对每个观点（10个以内）输出最相关的 0-3 篇笔记。每个匹配包含：
-- 笔记编号
-- 相关性分数（0-100，80以上才算强相关）
-- 相关性类型：明确复用 / 有限复用 / 不可复用 / 同一场·不复用
-- 一句话理由
-
-按以下纯文本格式：
-\`\`\`
+## 输出格式（每个观点单独一段）
 观点 vp_01 【标题】
   笔记3（82分·明确复用）：理由...
   笔记5（65分·有限复用）：理由...
-
-观点 vp_02 【标题】
-  无显著匹配
-
-观点 vp_03 【标题】
-  笔记1（45分·不可复用）：同一场访谈的历史版本，不应复用
-\`\`\`
+  无显著匹配的话写"无显著匹配"
 
 ## 观点列表
 ${vpList}
 
-## 历史笔记
-${noteList}
+## 剩余历史笔记
+${remainingNotes || "（无）"}
 
-请开始分析。`
+请逐观点分析。`
 
+    let matchReport = ""
     try {
       matchReport = await callAgent(matchPrompt, "", 8000)
     } catch (e: any) {
       matchReport = "（AI 判断暂时不可用）"
     }
 
-    // Phase 2: Build final report with LLM results + confidence adjustments
+    // ══════ Phase 3: Build report ══════
     let report = "# 历史素材复用判断报告\n\n"
-    report += "## 匹配方式\n\n"
-    report += "基于 DeepSeek 对观点和历史笔记的语义理解直接判断（非关键词匹配）。\n"
-    report += "对于每对（观点，笔记），LLM 综合判断：内容唯一性、语义相关性、观点增强/矛盾、时效性、可引用性。\n\n"
-    report += "补充说明：方案设计中规划了 embedding 向量化作为规模化方案（笔记量 >100 时启用），当前 8 篇笔记量用 LLM 直接判断即可。\n\n"
+
+    report += "## Phase 1: 同一场检测\n\n"
+    if (sameFieldIds.size > 0) {
+      for (const idx of sameFieldIds) {
+        const n = notesArray[idx - 1]
+        const title = n?.标题 || n?.title || `笔记${idx}`
+        report += `- 笔记${idx}：「${title}」 → 同一场·不复用。已从 Phase 2 匹配中排除。\n`
+      }
+    } else {
+      report += "- 未检测到同一场访谈的历史笔记。\n"
+    }
+
+    report += "\n## Phase 2: 语义匹配（已排除同一场笔记）\n\n"
+    report += "匹配方式：LLM 语义理解（非关键词匹配）。方案设计中规划了 embedding 向量化作为规模化方案（笔记量 >100 时启用）。\n\n"
     report += "---\n\n"
     report += "## 逐观点匹配\n\n"
     report += matchReport
     report += "\n\n---\n\n"
-    report += "## 特别提醒\n\n"
-    report += '- 如果匹配中出现"同一场·不复用"，说明该笔记和当前逐字稿是同一场访谈，这是题目数据中故意设置的内容陷阱。直接复用会造成文章重复\n'
-    report += '- "有限复用"的笔记可以作为概念佐证或风格参考，但不应直接拼接原文\n'
+    report += "## 说明\n\n"
+    report += "- 同一场检测由独立 LLM 调用完成（Phase 1），结果在代码层面强制排除——不依赖单个 prompt 里的文字约束\n"
+    report += '- "有限复用"的笔记可作为概念佐证或风格参考，不应直接拼接原文\n'
     report += '- 标注"过时"的笔记仅限背景参考\n'
 
-    // Phase 3: Extract confidence adjustments from LLM match results
+    // Confidence adjustments — only from Phase 2 matches (non-same-field)
     const confidenceAdjustments: Record<string, number> = {}
     for (const vp of (viewpoints || [])) {
-      const vpPattern = new RegExp(`观点\\s*${vp.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*【`)
-      const section = matchReport.match(vpPattern)
+      const escapedId = vp.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const section = matchReport.match(new RegExp(`观点\\s*${escapedId}\\s*【`))
       if (section) {
-        // Check for same-field notes (which would decrease confidence)
-        if (matchReport.includes("同一场")) {
-          // Don't boost from same-field matches
-        }
-        // Boost from high-confidence matches (80+)
-        const scoreMatch = section[0]?.match(/（(\d+)分/g)
-        if (scoreMatch && scoreMatch.length > 0) {
-          const scores = scoreMatch.map((s: string) => parseInt(s.replace(/[^0-9]/g, "")))
+        const scores = [...matchReport.matchAll(new RegExp(`（(\\d+)分`, 'g'))].map(m => parseInt(m[1]))
+        if (scores.length > 0) {
           const maxScore = Math.max(...scores)
           if (maxScore >= 80) {
             confidenceAdjustments[vp.id] = Math.min(95, (vp.confidence || 70) + 5)
