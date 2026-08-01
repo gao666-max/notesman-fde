@@ -79,7 +79,9 @@ export function DetailModal({ vp, open, onClose, srtContext }: DetailModalProps)
             </h4>
             <div className="rounded-lg border bg-muted/40 divide-y divide-border">
               {srtContext.map((line, i) => {
-                const isTarget = line.ts === vp.timestamp
+                // Find the closest line: check all evidence quote timestamps too
+                const eqTimestamps = new Set(vp.evidenceQuotes.map(eq => eq.timestamp).filter(Boolean))
+                const isTarget = line.ts === vp.timestamp || eqTimestamps.has(line.ts)
                 return (
                   <div key={i} className={`px-3.5 py-2 text-sm leading-relaxed ${isTarget ? 'bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-500' : ''}`}>
                     <span className="text-xs text-muted-foreground font-mono mr-2">[{line.ts}]</span>

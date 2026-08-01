@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useCallback } from "react"
+import { useMemo, useState, useCallback, useRef } from "react"
 import type { OutlineSection, Viewpoint } from "@/lib/types"
 import { INITIAL_SECTIONS, VIEWPOINTS as MOCK_VIEWPOINTS } from "@/lib/mock-data"
 import { Toolbar } from "@/components/toolbar"
@@ -312,15 +312,40 @@ export default function Page() {
     setLoadingCheck(false)
   }, [title, viewpoints, sections, sourceName, allById])
 
-  // --- SAVE OUTLINE ---
+  // --- SAVE OUTLINE (+ change log) ---
+  const lastSavedRef = useRef<{title: string; itemIds: string[]}>({title: "", itemIds: []})
+
   const handleSaveOutline = useCallback(() => {
+    const currentItemIds = sections.flatMap(s => s.itemIds)
+    const prev = lastSavedRef.current
+
+    // Build change log
+    const added = currentItemIds.filter(id => !prev.itemIds.includes(id)).map(id => {
+      const vp = allById.get(id); return vp ? { action: "添加", id: vp.id, title: vp.title, speaker: vp.speaker } : null
+    }).filter(Boolean)
+    const removed = prev.itemIds.filter(id => !currentItemIds.includes(id)).map(id => {
+      const vp = allById.get(id); return vp ? { action: "移除", id: vp.id, title: vp.title } : null
+    }).filter(Boolean)
+    const titleChanged = prev.title && prev.title !== title ? { action: "修改标题", from: prev.title, to: title } : null
+
+    const changeLog = {
+      savedAt: new Date().toISOString(),
+      previousState: { title: prev.title, itemCount: prev.itemIds.length },
+      currentState: { title, itemCount: currentItemIds.length },
+      changes: [...added, ...removed, ...(titleChanged ? [titleChanged] : [])],
+    }
+
+    // Update last saved reference
+    lastSavedRef.current = { title, itemIds: [...currentItemIds] }
+
     const data = {
       title, sourceName,
       sections: sections.map(s => ({
         id: s.id, title: s.title, itemIds: s.itemIds,
         items: s.itemIds.map(id => { const vp = allById.get(id); return vp ? { id: vp.id, title: vp.title, speaker: vp.speaker, timestamp: vp.timestamp } : null }).filter(Boolean),
       })),
-      savedAt: new Date().toISOString(),
+      changeLog,
+      savedAt: changeLog.savedAt,
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" })
     const url = URL.createObjectURL(blob)
