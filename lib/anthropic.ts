@@ -27,7 +27,7 @@ export async function callAgent(systemPrompt: string, userMessage: string, maxTo
   return text
 }
 
-export function extractJSON(text: string): Record<string, unknown> {
+export function extractJSON(text: string): Record<string, any> {
   let cleaned = text
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
