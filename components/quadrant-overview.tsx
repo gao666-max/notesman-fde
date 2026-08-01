@@ -104,7 +104,7 @@ export function QuadrantOverview({ viewpoints, selectedId, onSelect }: QuadrantO
                 {viewpoints.map((vp) => {
                   const colors = LEVEL_COLORS[vp.level] || LEVEL_COLORS.high
                   const evidenceCount = vp.evidenceQuotes?.length || vp.evidence || 1
-                  const size = 24 + evidenceCount * 8
+                  const size = 22 + evidenceCount * 12
                   const active = selectedId === vp.id
                   // Deterministic jitter from vp.id to spread overlapping bubbles
                   const idNum = parseInt(vp.id.replace("vp_", "")) || 1
