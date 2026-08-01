@@ -101,25 +101,20 @@ function normalizeOne(raw: any, index: number): any {
 
   // Hotspot match
   const hotspot = raw.hotspotMatch || raw.hotspot_match || raw.hotspot || {}
-  // Score normalization
   let rawScore = hotspot.score ?? hotspot.relevance_score ?? hotspot.hotness_score
   let score: number
   if (typeof rawScore === "number") {
+    // If > 5, it's probably 0-100 scale, normalize to 0-1
     score = rawScore > 5 ? rawScore / 100 : rawScore
   } else {
     score = hotness / 100
   }
   score = Math.min(0.99, Math.max(0.01, score))
-
-  // Reason — try many field names, provide fallback from topic
-  const hmReason = hotspot.reason || hotspot.match_reason || hotspot.matchReason || ""
-  const fallbackReason = hmReason || (hotspot.topic ? `该观点与"${hotspot.topic}"热点话题相关` : "")
-
   const hotspotMatch = {
     matched: hotspot.matched ?? (!!hotspot.topic && hotness >= 60),
     topic: hotspot.topic || hotspot.hotspot_topic || "",
     score,
-    reason: fallbackReason,
+    reason: hotspot.reason || hotspot.match_reason || "",
   }
 
   // Editorial flags
@@ -130,10 +125,6 @@ function normalizeOne(raw: any, index: number): any {
     needsHumanJudgment: !!flags.needsHumanJudgment || !!flags.needs_human_judgment || !!flags.need_human_review || level === "low",
     flagReason: flags.flagReason || flags.flag_reason || flags.reason || (level === "low" ? `置信度${confidence}%，建议编辑确认后使用` : ""),
   }
-
-  // Confidence reason — try all possible field names
-  const confReason = raw.confidenceReason || raw.confidence_reason || raw.confidenceReasonSource || raw.confidence_reason_source || ""
-  const summaryPreview = (summary || "").substring(0, 40)
 
   // Low-confidence viewpoints go to low_only category
   if (level === "low") category = "low_only"
@@ -151,7 +142,7 @@ function normalizeOne(raw: any, index: number): any {
     keywords: raw.keywords || raw.tags || raw.topics || [],
     category,
     evidenceQuotes: evidenceQuotes.slice(0, 5),
-    confidenceReason: confReason || (count >= 2 && summaryPreview.length > 20 ? `嘉宾给出了${count}段具体论述，表达清晰完整` : count >= 1 ? "嘉宾明确表达了此观点，有原文可循" : "此观点置信度较低，建议编辑核实原文"),
+    confidenceReason: raw.confidenceReason || raw.confidence_reason || raw.reason || "",
     hotspotMatch,
     editorialFlags,
     styleTags: raw.styleTags || raw.style_tags || raw.tags || [],
