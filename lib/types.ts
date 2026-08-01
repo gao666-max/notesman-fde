@@ -1,5 +1,5 @@
 export type ConfidenceLevel = "high" | "mid" | "low"
-export type CategoryId = "high_thought" | "current_answer" | "info_gap" | "low_only"
+export type CategoryId = "high_thought" | "current_answer" | "info_gap" | "low_only" | "weak_signal"
 export type QuadrantId = "treasure" | "priority" | "skip" | "verify"
 
 export interface EvidenceQuote {
@@ -65,6 +65,7 @@ export const CATEGORIES: Category[] = [
   { id: "high_thought", label: "高维思想" },
   { id: "current_answer", label: "当下解答" },
   { id: "info_gap", label: "信息差" },
+  { id: "weak_signal", label: "弱信号" },
   { id: "low_only", label: "仅低置信" },
 ]
 
@@ -73,4 +74,5 @@ export const CATEGORY_MAP: Record<CategoryId, string> = {
   current_answer: "当下解答",
   info_gap: "信息差",
   low_only: "仅低置信",
+  weak_signal: "弱信号",
 }

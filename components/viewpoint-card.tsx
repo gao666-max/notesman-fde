@@ -41,6 +41,7 @@ export function ViewpointCard({
         "group relative cursor-grab rounded-lg border bg-card text-card-foreground transition-shadow active:cursor-grabbing",
         outline ? "px-3 py-2 shadow-xs" : "p-3 shadow-xs hover:shadow-md",
         dragging && "opacity-40",
+        vp.category === "weak_signal" && "border-dashed border-amber-300 bg-amber-50/40 dark:border-amber-700 dark:bg-amber-950/10",
       )}
     >
       <div className="flex items-start gap-2">

@@ -60,13 +60,39 @@ export default function Page() {
     return srtLines.slice(start, end)
   }
 
-  const byId = useMemo(() => new Map(viewpoints.map((v) => [v.id, v])), [viewpoints])
-  const speakers = useMemo(() => Array.from(new Set(viewpoints.map((v) => v.speaker))), [viewpoints])
+  const byId = allById
+
+  // Convert weakSignals to pseudo-viewpoints for card library
+  const allViewpoints = useMemo(() => {
+    const ws = (weakSignals || []).map((w, i) => ({
+      id: `ws_${String(i+1).padStart(2,"0")}`,
+      title: w.topic,
+      summary: w.why,
+      speaker: w.speaker,
+      timestamp: w.timestamp,
+      confidence: 25,
+      hotness: 50,
+      level: "low" as ConfidenceLevel,
+      evidence: 0,
+      keywords: [],
+      category: "weak_signal" as CategoryId,
+      evidenceQuotes: [{ text: w.why, speaker: w.speaker, timestamp: w.timestamp }],
+      confidenceReason: "弱信号：嘉宾提过但未展开，置信度低但方向值得关注",
+      hotspotMatch: { matched: false, topic: "", score: 0, reason: "" },
+      editorialFlags: { factCheckNeeded: false, sensitiveContent: false, needsHumanJudgment: true, flagReason: "访谈中的弱信号，嘉宾未展开，需要编辑判断是否追踪" },
+      styleTags: [],
+    }))
+    return [...viewpoints, ...ws]
+  }, [viewpoints, weakSignals])
+
+  // Rebuild byId to include weak signals
+  const allById = useMemo(() => new Map(allViewpoints.map((v) => [v.id, v])), [allViewpoints])
+  const speakers = useMemo(() => Array.from(new Set(allViewpoints.map((v) => v.speaker))), [allViewpoints])
   const assignedIds = useMemo(() => new Set(sections.flatMap((s) => s.itemIds)), [sections])
 
   const libraryViewpoints = useMemo(() => {
     const q = filters.query.trim().toLowerCase()
-    let list = viewpoints.filter((v) => !assignedIds.has(v.id))
+    let list = allViewpoints.filter((v) => !assignedIds.has(v.id))
     if (q) {
       list = list.filter((v) =>
         v.title.toLowerCase().includes(q) ||
@@ -85,8 +111,8 @@ export default function Page() {
 
   const selectedVp = useMemo(() => {
     if (!selectedId) return null
-    return byId.get(selectedId) || null
-  }, [selectedId, byId])
+    return allById.get(selectedId) || null
+  }, [selectedId, allById])
 
   const toast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000) }
 
@@ -322,25 +348,24 @@ export default function Page() {
         onReanalyze={handleReanalyze} onExport={handleGenerateDraft} />
 
       <FilterBar filters={filters} speakers={speakers} onChange={setFilters} />
-      <QuadrantOverview viewpoints={viewpoints} selectedId={selectedId} onSelect={setSelectedId} />
+      <QuadrantOverview viewpoints={allViewpoints} selectedId={selectedId} onSelect={setSelectedId} />
 
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <CardLibrary viewpoints={libraryViewpoints} draggingId={draggingId} selectedId={selectedId}
           onDragStart={setDraggingId} onDragEnd={() => setDraggingId(null)}
           onAdd={(id) => addManyToActive([id])} onSelect={setSelectedId} onAddAll={addManyToActive}
           onDropToLibrary={(id) => { removeFromOutline(id); setDraggingId(null) }} />
-        <EditorWorkspace sections={sections} byId={byId} activeSectionId={activeSectionId}
+        <EditorWorkspace sections={sections} byId={allById} activeSectionId={activeSectionId}
           draggingId={draggingId} selectedId={selectedId} title={title}
           onTitleChange={setTitle} onSetActive={setActiveSectionId}
           onDropToSection={(sectionId, vpId) => { assignToSection(sectionId, vpId); setDraggingId(null) }}
           onRemove={removeFromOutline} onSelect={setSelectedId}
           onGenerateDraft={handleGenerateDraft} onSaveOutline={handleSaveOutline}
           onExportMarkdown={handleExportMarkdown} onFactCheck={handleFactCheck}
-          loadingDraft={loadingDraft} loadingCheck={loadingCheck}
-          weakSignals={weakSignals} />
+          loadingDraft={loadingDraft} loadingCheck={loadingCheck} />
       </main>
 
-      <StatusBar extracted={viewpoints.length} used={usedCount} words={usedCount * 150 + 300} lastSaved="刚才" />
+      <StatusBar extracted={allViewpoints.length} used={usedCount} words={usedCount * 150 + 300} lastSaved="刚才" />
 
       <DetailModal vp={selectedVp!} open={!!selectedVp} onClose={() => setSelectedId(null)}
         srtContext={selectedVp ? getContext(selectedVp.timestamp) : []} />

@@ -30,7 +30,7 @@ export function CardLibrary({
   onAddAll,
   onDropToLibrary,
 }: CardLibraryProps) {
-  const [collapsed, setCollapsed] = useState<Set<CategoryId>>(new Set())
+  const [collapsed, setCollapsed] = useState<Set<CategoryId>>(new Set(["weak_signal"]))
   const [over, setOver] = useState(false)
 
   const toggle = (id: CategoryId) =>
@@ -87,7 +87,7 @@ export function CardLibrary({
                   {cat.label}
                   <span className="text-xs text-muted-foreground">({items.length})</span>
                 </button>
-                {items.length > 0 && (
+                {items.length > 0 && cat.id !== "weak_signal" && (
                   <button
                     type="button"
                     onClick={() => onAddAll(items.map((i) => i.id))}
