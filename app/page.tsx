@@ -27,6 +27,37 @@ export default function Page() {
   const [loadingDraft, setLoadingDraft] = useState(false)
   const [loadingCheck, setLoadingCheck] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
+  const [srtLines, setSrtLines] = useState<{ts: string; speaker: string; text: string}[]>([])
+
+  function buildSrtLookup(raw: string) {
+    const lines: {ts: string; speaker: string; text: string}[] = []
+    let pendingTS = ""
+    for (const line of raw.split("\n")) {
+      const t = line.trim()
+      if (/^\d+$/.test(t)) continue
+      const tsM = t.match(/^(\d{2}:\d{2}:\d{2}),\d{3}\s*-->/)
+      if (tsM) { pendingTS = tsM[1]; continue }
+      if (pendingTS && t.length > 1) {
+        const colon = t.indexOf("：")
+        const speaker = colon > 0 ? t.substring(0, colon) : ""
+        const text = colon > 0 ? t.substring(colon + 1) : t
+        lines.push({ ts: pendingTS, speaker, text })
+        pendingTS = ""
+      }
+    }
+    setSrtLines(lines)
+  }
+
+  function getContext(ts: string, range = 30): {ts: string; speaker: string; text: string}[] {
+    if (!srtLines.length) return []
+    let idx = 0
+    for (let i = 0; i < srtLines.length; i++) {
+      if (srtLines[i].ts >= ts) { idx = i; break }
+    }
+    const start = Math.max(0, idx - 3)
+    const end = Math.min(srtLines.length, idx + 4)
+    return srtLines.slice(start, end)
+  }
 
   const byId = useMemo(() => new Map(viewpoints.map((v) => [v.id, v])), [viewpoints])
   const speakers = useMemo(() => Array.from(new Set(viewpoints.map((v) => v.speaker))), [viewpoints])
@@ -82,7 +113,7 @@ export default function Page() {
     setSrtContent(text)
     setSourceName(filename)
     setStatus("analyzing")
-    toast("Agent 1 正在分析逐字稿…")
+    toast("Agent 1 分析中（约 30-50 秒），请稍候…")
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -106,12 +137,13 @@ export default function Page() {
         } else {
           setSections(INITIAL_SECTIONS.map(s => ({ ...s, itemIds: [] })))
         }
-        toast(`✅ 提取了 ${data.viewpoints.length} 个观点`)
+        buildSrtLookup(text)
+        toast(`分析完成：${data.viewpoints.length} 个观点`)
       } else {
         throw new Error("未提取到观点")
       }
     } catch (e: any) {
-      toast(`❌ 分析失败：${e.message}`)
+      toast(`分析失败：${e.message}`)
       setStatus("done")
     }
   }, [])
@@ -307,7 +339,8 @@ export default function Page() {
 
       <StatusBar extracted={viewpoints.length} used={usedCount} words={usedCount * 150 + 300} lastSaved="刚才" />
 
-      <DetailModal vp={selectedVp!} open={!!selectedVp} onClose={() => setSelectedId(null)} />
+      <DetailModal vp={selectedVp!} open={!!selectedVp} onClose={() => setSelectedId(null)}
+        srtContext={selectedVp ? getContext(selectedVp.timestamp) : []} />
 
       {toastMsg && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-foreground px-4 py-2.5 text-sm text-background shadow-lg transition-all">

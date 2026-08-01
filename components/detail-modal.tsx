@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Quote, AlertTriangle, Zap, Flame, CheckCircle } from "lucide-react"
+import { X, Quote, AlertTriangle, Zap, Flame, CheckCircle, BookOpen } from "lucide-react"
 import type { Viewpoint } from "@/lib/types"
 import { levelBadgeClass, levelDotBg, levelLabel, isHot } from "@/lib/viewpoint-utils"
 import { cn } from "@/lib/utils"
@@ -9,9 +9,10 @@ interface DetailModalProps {
   vp: Viewpoint
   open: boolean
   onClose: () => void
+  srtContext?: {ts: string; speaker: string; text: string}[]
 }
 
-export function DetailModal({ vp, open, onClose }: DetailModalProps) {
+export function DetailModal({ vp, open, onClose, srtContext }: DetailModalProps) {
   if (!open) return null
 
   const f = vp.editorialFlags
@@ -58,7 +59,26 @@ export function DetailModal({ vp, open, onClose }: DetailModalProps) {
           <p className="mt-1.5 text-sm leading-relaxed">{vp.summary}</p>
         </div>
 
-        {/* Evidence Quotes */}
+        {/* SRT Context Panel */}
+        {srtContext && srtContext.length > 0 && (
+          <div className="mt-5">
+            <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <BookOpen className="size-3.5" /> 原文上下文
+            </h4>
+            <div className="rounded-lg border bg-muted/40 divide-y divide-border">
+              {srtContext.map((line, i) => {
+                const isTarget = line.ts === vp.timestamp
+                return (
+                  <div key={i} className={`px-3.5 py-2 text-sm leading-relaxed ${isTarget ? 'bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-500' : ''}`}>
+                    <span className="text-xs text-muted-foreground font-mono mr-2">[{line.ts}]</span>
+                    {line.speaker && <span className="font-medium text-xs mr-1">{line.speaker}：</span>}
+                    <span className={isTarget ? 'font-medium' : ''}>{line.text}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
         <div className="mt-5">
           <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Quote className="size-3.5" /> 证据原文 · {vp.evidenceQuotes.length} 条

@@ -103,10 +103,15 @@ export function QuadrantOverview({ viewpoints, selectedId, onSelect }: QuadrantO
                 {/* bubbles */}
                 {viewpoints.map((vp) => {
                   const colors = LEVEL_COLORS[vp.level] || LEVEL_COLORS.high
-                  // Size based on evidence QUOTE count (real data)
                   const evidenceCount = vp.evidenceQuotes?.length || vp.evidence || 1
                   const size = 24 + evidenceCount * 8
                   const active = selectedId === vp.id
+                  // Deterministic jitter from vp.id to spread overlapping bubbles
+                  const idNum = parseInt(vp.id.replace("vp_", "")) || 1
+                  const jx = ((idNum * 7) % 13 - 6) * 1.5
+                  const jy = ((idNum * 11) % 11 - 5) * 1.2
+                  const x = Math.max(4, Math.min(96, vp.hotness + jx))
+                  const y = Math.max(4, Math.min(96, vp.confidence + jy))
                   return (
                     <button
                       key={vp.id}
@@ -114,8 +119,8 @@ export function QuadrantOverview({ viewpoints, selectedId, onSelect }: QuadrantO
                       onClick={() => onSelect(vp.id)}
                       title={`${vp.id} ${vp.title}\n置信 ${vp.confidence}% · 热点 ${vp.hotness}% · ${evidenceCount} 条证据`}
                       style={{
-                        left: `${Math.max(3, Math.min(97, vp.hotness))}%`,
-                        bottom: `${Math.max(3, Math.min(97, vp.confidence))}%`,
+                        left: `${x}%`,
+                        bottom: `${y}%`,
                         width: size,
                         height: size,
                         backgroundColor: colors.bg,
