@@ -74,8 +74,8 @@ function normalizeOne(raw: any, index: number): any {
 
   let level = (raw.level || raw.confidence_level || "").toLowerCase()
   if (!level || !["high","mid","medium","low"].includes(level)) {
-    if (confidence >= 72) level = "high"
-    else if (confidence >= 45) level = "mid"
+    if (confidence >= 80) level = "high"
+    else if (confidence >= 55) level = "mid"
     else level = "low"
   }
   if (level === "medium") level = "mid"
