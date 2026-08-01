@@ -157,7 +157,7 @@ describe("normalizeViewpoints", () => {
     }
     const vps = normalizeViewpoints(raw)
     expect(vps[0].counterpoint).toBeDefined()
-    expect(vps[0].counterpoint.speaker).toBe("嘉宾B")
+    expect(vps[0].counterpoint!.speaker).toBe("嘉宾B")
   })
 
   it("preserves causalChain field", () => {
@@ -177,8 +177,8 @@ describe("normalizeViewpoints", () => {
     }
     const vps = normalizeViewpoints(raw)
     expect(vps[0].causalChain).toBeDefined()
-    expect(vps[0].causalChain.premise).toBe("AI降低了编码成本")
-    expect(vps[0].causalChain.missingSteps).toHaveLength(1)
+    expect(vps[0].causalChain!.premise).toBe("AI降低了编码成本")
+    expect(vps[0].causalChain!.missingSteps).toHaveLength(1)
   })
 
   it("handles empty viewpoints array", () => {

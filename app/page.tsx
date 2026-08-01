@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useCallback, useRef } from "react"
-import type { OutlineSection, Viewpoint } from "@/lib/types"
+import type { OutlineSection, Viewpoint, ConfidenceLevel, CategoryId } from "@/lib/types"
 import { INITIAL_SECTIONS, VIEWPOINTS as MOCK_VIEWPOINTS } from "@/lib/mock-data"
 import { Toolbar } from "@/components/toolbar"
 import { FilterBar, type Filters } from "@/components/filter-bar"

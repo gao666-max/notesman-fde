@@ -2,7 +2,7 @@
  * Normalize any reasonable viewpoint JSON format to our expected Viewpoint type.
  * DeepSeek sometimes invents its own field names - this maps them.
  */
-import type { Viewpoint } from "./types"
+import type { Viewpoint, CategoryId } from "./types"
 
 export function normalizeViewpoints(raw: any): Viewpoint[] {
   const arr = raw.viewpoints || raw.points || raw.items || raw.insights || raw.results || []
@@ -22,7 +22,7 @@ function normalizeOne(raw: any, index: number): Viewpoint {
 
   // Map DeepSeek's "dimension"/"type" to our "category"
   const rawCat = (raw.category || raw.dimension || raw.type || "").toLowerCase()
-  let category = "high_thought"
+  let category: CategoryId = "high_thought"
   if (rawCat.includes("answer") || rawCat.includes("current") || rawCat.includes("action")) category = "current_answer"
   if (rawCat.includes("info") || rawCat.includes("gap") || rawCat.includes("data")) category = "info_gap"
 
