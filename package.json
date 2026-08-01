@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "test": "npx vitest run --config vitest.config.ts",
+    "test:watch": "npx vitest --config vitest.config.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."
