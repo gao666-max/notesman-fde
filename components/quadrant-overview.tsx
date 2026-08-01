@@ -106,12 +106,9 @@ export function QuadrantOverview({ viewpoints, selectedId, onSelect }: QuadrantO
                   const evidenceCount = vp.evidenceQuotes?.length || vp.evidence || 1
                   const size = 22 + evidenceCount * 12
                   const active = selectedId === vp.id
-                  // Deterministic jitter from vp.id to spread overlapping bubbles
-                  const idNum = parseInt(vp.id.replace("vp_", "")) || 1
-                  const jx = ((idNum * 7) % 13 - 6) * 1.5
-                  const jy = ((idNum * 11) % 11 - 5) * 1.2
-                  const x = Math.max(4, Math.min(96, vp.hotness + jx))
-                  const y = Math.max(4, Math.min(96, vp.confidence + jy))
+                  // Use exact hotness/confidence positions — no jitter
+                  const x = Math.max(3, Math.min(97, vp.hotness))
+                  const y = Math.max(3, Math.min(97, vp.confidence))
                   return (
                     <button
                       key={vp.id}
