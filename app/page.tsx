@@ -27,6 +27,7 @@ export default function Page() {
   const [loadingDraft, setLoadingDraft] = useState(false)
   const [loadingCheck, setLoadingCheck] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
+  const [cachedArticle, setCachedArticle] = useState("")
   const [srtLines, setSrtLines] = useState<{ts: string; speaker: string; text: string}[]>([])
   const [weakSignals, setWeakSignals] = useState<{topic:string;speaker:string;timestamp:string;why:string}[]>([])
 
@@ -251,6 +252,7 @@ export default function Page() {
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
       const article = data.article || ""
+      setCachedArticle(article) // cache for fact check reuse
       const blob = new Blob([article], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -279,18 +281,24 @@ export default function Page() {
     setLoadingCheck(true)
     toast("Agent 4 正在核查…")
     try {
-      // First generate article text, then check it
-      const genRes = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, viewpoints: usedVps, sections, sourceName }),
-      })
-      const article = genRes.ok ? (await genRes.json()).article || "" : ""
+      // Reuse cached article if available, otherwise generate fresh
+      const article = cachedArticle || ""
+      if (!article) {
+        // Fallback: generate from viewpoints data directly
+        const genRes = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, viewpoints: usedVps, sections, sourceName }),
+        })
+        if (!genRes.ok) throw new Error(await genRes.text())
+        const genData = await genRes.json()
+        setCachedArticle(genData.article || "")
+      }
 
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ article, viewpoints: usedVps }),
+        body: JSON.stringify({ article: cachedArticle || article, viewpoints: usedVps }),
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()

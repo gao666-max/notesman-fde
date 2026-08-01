@@ -1,11 +1,13 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 
-export const anthropic = new Anthropic({
-  baseURL: process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com",
-  apiKey: process.env.ANTHROPIC_AUTH_TOKEN || "",
-})
+// Support both new (LLM_*) and legacy (ANTHROPIC_*) env var naming
+const baseURL = process.env.LLM_BASE_URL || process.env.ANTHROPIC_BASE_URL || "https://api.deepseek.com/anthropic"
+const apiKey = process.env.LLM_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || ""
+const model = process.env.LLM_MODEL || process.env.ANTHROPIC_DEFAULT_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "deepseek-chat"
 
-export const MODEL = process.env.ANTHROPIC_DEFAULT_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "deepseek-chat"
+export const anthropic = new Anthropic({ baseURL, apiKey })
+
+export const MODEL = model
 
 export async function callAgent(systemPrompt: string, userMessage: string, maxTokens = 8000): Promise<string> {
   const stream = await anthropic.messages.stream({
