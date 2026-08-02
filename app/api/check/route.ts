@@ -81,9 +81,15 @@ ${article.substring(0, 3000)}
 === 需要核查的论断 ===
 ${claimsToCheck.join("\n---\n")}
 
-请按照核查能力声明中的格式，逐条输出核查结果。不要编造判断——对于你无法确认的具体数据，诚实标注"无法判断"。`
+请按照核查能力声明中的格式，逐条输出核查结果。直接开始输出核查结果，不要有任何开场白。不要编造判断——对于你无法确认的具体数据，诚实标注"无法判断"。`
 
-    const body = await callAgent(VERIFY_PROMPT, userMsg, 8000)
+    const rawBody = await callAgent(VERIFY_PROMPT, userMsg, 8000)
+    // Strip LLM preamble
+    const body = rawBody
+      .replace(/^好的[，,\s]*我将[^。]*。[^\n]*\n+/i, "")
+      .replace(/^我将[^。]*。[^\n]*\n+/i, "")
+      .replace(/^好的[，,\s]*以下是[^。]*。[^\n]*\n+/i, "")
+      .replace(/^\s*\n+/, "")
 
     // Build final report
     const report = `# 事实核查报告
@@ -113,8 +119,7 @@ ${body}
 
 ## 补充说明
 
-方案设计中规划了完整的 RAG 外检管道（Embedding → 向量检索 → 可信源验证 → LLM 判断）。
-当前原型用 LLM 训练知识做交叉验证替代。面试时可以说明："48 小时内跑通核心管线，RAG 外检是明确的下一优先级——技术路径已完整设计，缺的主要是工程实现时间。"
+如需对外部数据（如"$12000 降到 $100""终生收入下降 1/5"等嘉宾引用但未指明来源的研究）做独立验证，当前原型依赖 LLM 训练知识交叉比对。方案设计中规划了 RAG 外检管道（Embedding → 向量检索 → 可信源验证 → LLM 判断），作为下一优先级的增强项。
 `
 
     return NextResponse.json({ report })

@@ -86,6 +86,9 @@ export async function POST(req: Request) {
 3. 时效性：日期过时了吗？（2023年以前 → 仅背景参考）
 4. 可引用性：引用范围允许吗？
 
+## 输出规则
+直接开始输出匹配结果，不要有任何开场白、问候语或自我介绍。不要说"好的""我将作为"这类话。第一个字符就应该是"观点 vp_"。
+
 ## 输出格式（每个观点单独一段）
 观点 vp_01 【标题】
   笔记3（82分·明确复用）：理由...
@@ -102,7 +105,13 @@ ${remainingNotes || "（无）"}
 
     let matchReport = ""
     try {
-      matchReport = await callAgent(matchPrompt, "", 8000)
+      const rawReport = await callAgent(matchPrompt, "", 8000)
+      // Strip LLM preamble
+      matchReport = rawReport
+        .replace(/^好的[，,\s]*我将[^。]*。[^\n]*\n+/i, "")
+        .replace(/^我将[^。]*。[^\n]*\n+/i, "")
+        .replace(/^好的[，,\s]*以下是[^。]*。[^\n]*\n+/i, "")
+        .replace(/^\s*\n+/, "")
     } catch (e: any) {
       matchReport = "（AI 判断暂时不可用）"
     }
@@ -122,13 +131,13 @@ ${remainingNotes || "（无）"}
     }
 
     report += "\n## Phase 2: 语义匹配（已排除同一场笔记）\n\n"
-    report += "匹配方式：LLM 语义理解（非关键词匹配）。方案设计中规划了 embedding 向量化作为规模化方案（笔记量 >100 时启用）。\n\n"
+    report += "匹配方式：AI 语义理解（非简单关键词匹配），逐篇阅读笔记内容后判断相关性。\n\n"
     report += "---\n\n"
     report += "## 逐观点匹配\n\n"
     report += matchReport
     report += "\n\n---\n\n"
     report += "## 说明\n\n"
-    report += "- 同一场检测由独立 LLM 调用完成（Phase 1），结果在代码层面强制排除——不依赖单个 prompt 里的文字约束\n"
+    report += "- 同一场检测已自动完成——系统先判断哪些笔记和当前逐字稿是同一场访谈，这些笔记不会出现在下方匹配结果中\n"
     report += '- "有限复用"的笔记可作为概念佐证或风格参考，不应直接拼接原文\n'
     report += '- 标注"过时"的笔记仅限背景参考\n'
 

@@ -49,7 +49,8 @@ const SYSTEM_PROMPT = `你是笔记侠编辑助理。你的任务是构建一个
 3. 原文引用必须来自观点的 evidenceQuotes
 4. 编辑备注区留空，让编辑填写
 5. 标题还是要有判断力（跟以前一样）
-6. 输出纯文本，不用markdown标记`
+6. 输出纯文本，不用markdown标记
+7. 直接输出草稿内容，不要有任何开场白、问候语或"好的""以下是"这类话。第一个字就是标题。`
 
 const USER_MSG = `文章标题：%s
 素材来源：%s
@@ -88,7 +89,14 @@ export async function POST(req: Request) {
 
     const userMsg = USER_MSG.replace("%s", title).replace("%s", sourceName || "访谈逐字稿").replace("%s", sectionCtx)
 
-    const article = await callAgent(SYSTEM_PROMPT, userMsg, 8000)
+    const rawArticle = await callAgent(SYSTEM_PROMPT, userMsg, 8000)
+    // Strip LLM preamble
+    const article = rawArticle
+      .replace(/^好的[，,\s]*我将[^。]*。[^\n]*\n+/i, "")
+      .replace(/^我将[^。]*。[^\n]*\n+/i, "")
+      .replace(/^好的[，,\s]*以下是[^。]*。[^\n]*\n+/i, "")
+      .replace(/^\s*\n+/, "")
+      .trim()
     return NextResponse.json({ article })
   } catch (e: any) {
     console.error("Agent 3 error:", e)

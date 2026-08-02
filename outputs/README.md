@@ -36,9 +36,9 @@
 
 ## 数据来源
 
-- 逐字稿：`data/interview_transcript.srt`（97 段 SRT）
-- 历史笔记：`data/historical_notes.jsonl`（8 篇脱敏笔记）
-- 样稿：`data/published_samples/`（3 篇 .docx）
+- 逐字稿：题目材料包提供的 `interview_transcript.srt`（97 段 SRT，面试时由面试官现场提供导入）
+- 历史笔记：题目材料包提供的 `historical_notes.jsonl`（8 篇脱敏笔记，面试时由面试官现场提供导入）
+- 样稿：题目材料包 `published_samples/`（3 篇 .docx，用于 Agent 3 风格约束）
 - AI 引擎：DeepSeek Chat（Anthropic 兼容协议）
 - 预运行时间：2026-08-01
 
