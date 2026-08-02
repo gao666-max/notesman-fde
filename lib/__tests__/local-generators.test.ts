@@ -102,7 +102,7 @@ describe("localGenerateFactCheck", () => {
   it("includes action recommendations with priority", () => {
     const sections = [{ title: "混合", itemIds: ["vp_01", "vp_12"] }]
     const report = localGenerateFactCheck("test", "test.srt", sections, mockByid)
-    expect(report).toContain("编辑行动建议")
+    expect(report).toContain("整体评估")
     expect(report).toContain("必须确认")
   })
 })

@@ -131,7 +131,7 @@ export function localGenerateFactCheck(
       lines.push("【" + secTitle + "】")
       for (const item of items) {
         const vp = item.vp
-        const icon = vp.level === "low" ? "🔴" : vp.level === "medium" ? "🟡" : "🟢"
+        const icon = vp.level === "low" ? "🔴" : vp.level === "mid" ? "🟡" : "🟢"
         lines.push("  " + icon + " " + vp.id + " " + vp.title)
         lines.push("    说话人：" + vp.speaker + " | 时间戳：" + vp.timestamp)
         lines.push("    证据摘要：" + (vp.evidenceQuotes?.[0]?.text || vp.summary || "").substring(0, 100))
@@ -144,22 +144,31 @@ export function localGenerateFactCheck(
     }
   }
 
-  lines.push("─── 编辑行动建议 ───")
+  const highP = needsAttention.filter((n: any) => n.vp.level === "low" || n.vp.editorialFlags?.factCheckNeeded)
+  const midP = needsAttention.filter((n: any) => !highP.includes(n) && (n.vp.level === "mid" || n.vp.editorialFlags?.needsHumanJudgment))
+
+  lines.push("【整体评估】")
+  lines.push("")
+  lines.push("事实准确度：" + (highP.length > 0 ? "中" : "高"))
   lines.push("")
 
-  const highP = needsAttention.filter((n: any) => n.vp.level === "low" || n.vp.editorialFlags?.factCheckNeeded)
-  const midP = needsAttention.filter((n: any) => !highP.includes(n) && (n.vp.level === "medium" || n.vp.editorialFlags?.needsHumanJudgment))
-
   if (highP.length > 0) {
-    lines.push("🔴 必须确认（发稿前）：" + highP.length + " 项")
-    lines.push("   涉及强数据论断和外部引用，逐一核实。低置信观点改为审慎表述。")
+    lines.push("🔴 必须确认（发稿前）：")
+    for (const item of highP) {
+      lines.push("  - " + item.vp.id + " " + item.vp.title + "：" + item.flags.join("，"))
+    }
+    lines.push("")
   }
   if (midP.length > 0) {
-    lines.push("🟡 建议确认：" + midP.length + " 项")
-    lines.push("   涉及预测性判断和观点性表述，根据目标读者调整力度。")
+    lines.push("🟡 建议确认：")
+    for (const item of midP) {
+      lines.push("  - " + item.vp.id + " " + item.vp.title + "：" + item.flags.join("，"))
+    }
+    lines.push("")
   }
   if (highP.length === 0 && midP.length === 0) {
-    lines.push("🟢 无强制确认项。")
+    lines.push("🟢 无强制确认项，所有观点可直接使用。")
+    lines.push("")
   }
 
   return lines.join("\n")
