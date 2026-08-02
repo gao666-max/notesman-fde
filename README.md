@@ -95,4 +95,4 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · DeepSeek API
 | 产出 1：需求澄清 | `docs/requirements_definition.docx` | Word |
 | 产出 2：方案设计 | `docs/solution_design.docx` | Word |
 | 产出 3：可运行原型 | 本目录（`pnpm dev` 启动）+ `samples/` 下的运行结果 | Next.js + Markdown |
-| 产出 4：讲解视频 | `docs/8月2日.mp4` | MP4 |
+| 产出 4：讲解视频 | [百度网盘](https://pan.baidu.com/s/1zXJEH12w11yGpKLz48t1qQ?pwd=m1as) 提取码: m1as | MP4 |
