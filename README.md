@@ -25,14 +25,14 @@ pnpm dev
 
 ```bash
 # DeepSeek（推荐，国内直接访问）
-ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic
-ANTHROPIC_AUTH_TOKEN=sk-your-deepseek-key
-ANTHROPIC_DEFAULT_MODEL=deepseek-chat
+LLM_BASE_URL=https://api.deepseek.com/anthropic
+LLM_API_KEY=sk-your-deepseek-key
+LLM_MODEL=deepseek-chat
 
 # 或用 Anthropic 官方（需科学上网）
-# ANTHROPIC_BASE_URL=https://api.anthropic.com
-# ANTHROPIC_AUTH_TOKEN=sk-ant-your-key
-# ANTHROPIC_DEFAULT_MODEL=claude-sonnet-4-20250514
+# LLM_BASE_URL=https://api.anthropic.com
+# LLM_API_KEY=sk-ant-your-key
+# LLM_MODEL=claude-sonnet-4-20250514
 ```
 
 ## 输入文件
@@ -95,4 +95,4 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · DeepSeek API
 | 产出 1：需求澄清 | `docs/requirements_definition.docx` | Word |
 | 产出 2：方案设计 | `docs/solution_design.docx` | Word |
 | 产出 3：可运行原型 | 本目录（`pnpm dev` 启动）+ `samples/` 下的运行结果 | Next.js + Markdown |
-| 产出 4：讲解视频 | 待提交 | MP4 |
+| 产出 4：讲解视频 | `docs/8月2日.mp4` | MP4 |
