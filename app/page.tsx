@@ -430,7 +430,7 @@ export default function Page() {
       </div>
 
       <DetailModal vp={selectedVp!} open={!!selectedVp} onClose={() => setSelectedId(null)}
-        srtContext={selectedVp ? getContext(selectedVp.timestamp) : []} />
+        srtContext={selectedVp ? getContext(selectedVp.timestamp) : []} allViewpoints={viewpoints} />
 
       {toastMsg && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-foreground px-4 py-2.5 text-sm text-background shadow-lg transition-all">

@@ -42,6 +42,10 @@ export interface Viewpoint {
   styleTags: string[]
   counterpoint?: { speaker: string; summary: string } | null
   causalChain?: CausalChain | null
+  // 观点间逻辑关系（逻辑链）：这个观点由哪个观点推导/深化/对比而来
+  relations?: ViewpointRelation[] | null
+  // 案例独立建模：识别"这是一个案例"并标注背景-行动-结果三要素完整性
+  case?: CaseAnalysis | null
 }
 
 export interface CausalChain {
@@ -50,6 +54,24 @@ export interface CausalChain {
   conclusion: string
   evidence: { segment: string; text: string }[]
   missingSteps: string[]
+}
+
+export type RelationType = "causal" | "progressive" | "contrast"
+
+export interface ViewpointRelation {
+  targetId: string
+  type: RelationType
+  reason: string
+}
+
+export type CaseCompleteness = "complete" | "partial" | "unknown"
+
+export interface CaseAnalysis {
+  background: string
+  action: string
+  result: string
+  completeness: CaseCompleteness
+  evidence: string
 }
 
 export interface WeakSignal {

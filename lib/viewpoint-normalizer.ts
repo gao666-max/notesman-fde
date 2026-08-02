@@ -159,5 +159,7 @@ function normalizeOne(raw: any, index: number): Viewpoint {
     styleTags: raw.styleTags || raw.style_tags || raw.tags || [],
     counterpoint: raw.counterpoint || null,
     causalChain: raw.causalChain || raw.causal_chain || null,
+    relations: raw.relations || raw.viewpoint_relations || null,
+    case: raw.case || raw.case_analysis || null,
   }
 }

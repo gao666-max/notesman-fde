@@ -32,7 +32,13 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A在开场和结尾两次独立强调此观点，表述清晰、有明确的价值判断",
-      "keywords": ["企业家精神", "能动性", "硅谷", "重新定义", "agency"],
+      "keywords": [
+        "企业家精神",
+        "能动性",
+        "硅谷",
+        "重新定义",
+        "agency"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI时代的个人成长/职业规划",
@@ -45,8 +51,18 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["概念重构", "金句型"],
-      "summary_short": "嘉宾A把'企业家'重新定义为'能动性'的同义词，认为AI时代每个人都应该展现企业家精神，不限于硅谷创始人"
+      "style_tags": [
+        "概念重构",
+        "金句型"
+      ],
+      "summary_short": "嘉宾A把'企业家'重新定义为'能动性'的同义词，认为AI时代每个人都应该展现企业家精神，不限于硅谷创始人",
+      "relations": [
+        {
+          "targetId": "vp_11",
+          "type": "progressive",
+          "reason": "把'企业家=能动性'的定义进一步深化到社会价值观层面"
+        }
+      ]
     },
     {
       "viewpoint_id": "vp_02",
@@ -69,7 +85,14 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A用历史事实反驳了常见叙事，论证完整且有学术支撑",
-      "keywords": ["工业革命", "自动化", "体力劳动", "人类智能", "认知劳动", "情感劳动"],
+      "keywords": [
+        "工业革命",
+        "自动化",
+        "体力劳动",
+        "人类智能",
+        "认知劳动",
+        "情感劳动"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI会取代哪些工作/白领失业",
@@ -82,8 +105,23 @@
         "needs_human_judgment": true,
         "flag_reason": "涉及对'工业革命'的历史定性判断，建议编辑核实历史学者的主流观点是否一致"
       },
-      "style_tags": ["反常识纠偏", "历史类比"],
-      "summary_short": "嘉宾A指出'工业革命自动化体力劳动'是错误前提——它提高效率而非自动化，人类智能的深度至今是未解之谜"
+      "style_tags": [
+        "反常识纠偏",
+        "历史类比"
+      ],
+      "summary_short": "嘉宾A指出'工业革命自动化体力劳动'是错误前提——它提高效率而非自动化，人类智能的深度至今是未解之谜",
+      "relations": [
+        {
+          "targetId": "vp_12",
+          "type": "causal",
+          "reason": "工业革命从未自动化劳动而是改变技能结构——这正是今天不适应新技术者收入下降的历史原因"
+        },
+        {
+          "targetId": "vp_06",
+          "type": "contrast",
+          "reason": "嘉宾A的理性历史视角与公共讨论的极端叙事形成张力"
+        }
+      ]
     },
     {
       "viewpoint_id": "vp_03",
@@ -106,11 +144,17 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾B提供了具体个人经验——CEO工具栈全部自建、待办事项App的自动清理规则",
-      "keywords": ["CEO工具栈", "AI编程", "应用开发", "周末", "成本下降"],
+      "keywords": [
+        "CEO工具栈",
+        "AI编程",
+        "应用开发",
+        "周末",
+        "成本下降"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI编程工具改变了什么",
-        "relevance_score": 0.90,
+        "relevance_score": 0.9,
         "match_reason": "CEO亲自用AI编程构建完整工具栈，是AI编程工具'赋能非开发者'的最强案例"
       },
       "editorial_flags": {
@@ -119,8 +163,25 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["具体案例", "个人叙事"],
-      "summary_short": "嘉宾B透露他的CEO工具栈全部用AI编程工具自建，应用开发成本从几个月降到一个周末"
+      "style_tags": [
+        "具体案例",
+        "个人叙事"
+      ],
+      "summary_short": "嘉宾B透露他的CEO工具栈全部用AI编程工具自建，应用开发成本从几个月降到一个周末",
+      "relations": [
+        {
+          "targetId": "vp_09",
+          "type": "causal",
+          "reason": "CEO自建工具栈证明AI编程门槛已消失，产品经理因此不再等团队出原型"
+        }
+      ],
+      "case": {
+        "background": "嘉宾B是一位CEO，管理整个公司但坚持亲自动手",
+        "action": "用AI编程工具自建了整套CEO工具栈，包括待办事项应用",
+        "result": "应用开发成本从几个月降到一个周末，效率大幅提升",
+        "completeness": "complete",
+        "evidence": "我的整个CEO工具栈里全是我自己构建的应用。"
+      }
     },
     {
       "viewpoint_id": "vp_04",
@@ -143,7 +204,13 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾B提供了可操作的步骤和个人观察，有明确的'做了什么→效果如何'因果链",
-      "keywords": ["员工培训", "AI入门", "陪伴式教学", "解锁", "组织变革"],
+      "keywords": [
+        "员工培训",
+        "AI入门",
+        "陪伴式教学",
+        "解锁",
+        "组织变革"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI时代的个人成长/职业规划",
@@ -156,8 +223,18 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["可操作步骤", "组织管理"],
-      "summary_short": "嘉宾B发现带员工陪跑一遍AI工具使用，比让他们看视频自学有效得多——陪伴解开了某个心理结"
+      "style_tags": [
+        "可操作步骤",
+        "组织管理"
+      ],
+      "summary_short": "嘉宾B发现带员工陪跑一遍AI工具使用，比让他们看视频自学有效得多——陪伴解开了某个心理结",
+      "case": {
+        "background": "嘉宾B的团队引入AI工具",
+        "action": "坐下来和员工两三人一组，一步步带他们走完深度研究等基本任务",
+        "result": "员工仿佛解开了某个结，之后能自己翱翔（未给出可量化结果）",
+        "completeness": "partial",
+        "evidence": "我陪着他们一起做的这个过程，有某种东西，之后仿佛解开了某个结"
+      }
     },
     {
       "viewpoint_id": "vp_05",
@@ -180,7 +257,16 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A作为该领域的顶尖科学家给出了清晰的定义框架和进化论依据",
-      "keywords": ["空间智能", "3D", "理解", "推理", "生成", "交互", "进化", "世界实验室"],
+      "keywords": [
+        "空间智能",
+        "3D",
+        "理解",
+        "推理",
+        "生成",
+        "交互",
+        "进化",
+        "世界实验室"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "空间智能/具身智能/机器人",
@@ -193,7 +279,10 @@
         "needs_human_judgment": false,
         "flag_reason": "涉及进化时间数据（5亿年 vs 语言智能），建议核实生物学时间线"
       },
-      "style_tags": ["学术框架", "前沿技术"],
+      "style_tags": [
+        "学术框架",
+        "前沿技术"
+      ],
       "summary_short": "嘉宾A定义了空间智能的四大要素（理解/推理/生成/交互），指出其比语言智能古老5亿年，是AI的下一个前沿"
     },
     {
@@ -217,7 +306,14 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A对整个公共话语生态给出了结构性的诊断，且指出具体缺失了什么",
-      "keywords": ["两极分化", "公共讨论", "乌托邦", "末日论", "中间立场", "细致入微"],
+      "keywords": [
+        "两极分化",
+        "公共讨论",
+        "乌托邦",
+        "末日论",
+        "中间立场",
+        "细致入微"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI创业/融资/估值",
@@ -230,7 +326,10 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["结构诊断", "批判性"],
+      "style_tags": [
+        "结构诊断",
+        "批判性"
+      ],
       "summary_short": "嘉宾A诊断AI公共讨论被两极分化占领——乌托邦vs末日论，中间立场的细致讨论反而缺失"
     },
     {
@@ -249,7 +348,13 @@
       ],
       "confidence": "medium",
       "confidence_reason": "嘉宾B引用了具体数字但未说明数据来源（'过去几年所做的研究'），需要编辑核实",
-      "keywords": ["教育成本", "个性化教学", "一对一", "AI教育", "成本下降"],
+      "keywords": [
+        "教育成本",
+        "个性化教学",
+        "一对一",
+        "AI教育",
+        "成本下降"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI教育：学校该禁AI还是拥抱AI",
@@ -262,7 +367,10 @@
         "needs_human_judgment": true,
         "flag_reason": "涉及具体成本数据（$12000/年→$100），需核实在研参考来源和适用条件"
       },
-      "style_tags": ["数据驱动", "教育经济"],
+      "style_tags": [
+        "数据驱动",
+        "教育经济"
+      ],
       "summary_short": "嘉宾B称AI个性化教学效果接近一对一教学，但成本从每年$12000降到$100"
     },
     {
@@ -286,7 +394,14 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾B提出了一个清晰的分析框架并用具体职业案例（文案写手）做了说明",
-      "keywords": ["杠铃效应", "专才", "通才", "前1%", "文案写手", "职业分化"],
+      "keywords": [
+        "杠铃效应",
+        "专才",
+        "通才",
+        "前1%",
+        "文案写手",
+        "职业分化"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI会取代哪些工作/白领失业",
@@ -299,8 +414,18 @@
         "needs_human_judgment": true,
         "flag_reason": "这是一个预测性框架而非已证实规律，建议编辑在文章中明确标注为'假设'而非结论"
       },
-      "style_tags": ["原创框架", "比喻式"],
-      "summary_short": "嘉宾B提出'杠铃效应'：AI时代中间层消失，要么做到领域前1%，要么成为高能动性的通才"
+      "style_tags": [
+        "原创框架",
+        "比喻式"
+      ],
+      "summary_short": "嘉宾B提出'杠铃效应'：AI时代中间层消失，要么做到领域前1%，要么成为高能动性的通才",
+      "relations": [
+        {
+          "targetId": "vp_12",
+          "type": "causal",
+          "reason": "杠铃效应让中间层消失，水平一般的通才正是收入受冲击的那批人"
+        }
+      ]
     },
     {
       "viewpoint_id": "vp_09",
@@ -323,7 +448,13 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A以产品经理这个具体岗位为例，描述了从几个月到快速原型的具体变化路径",
-      "keywords": ["产品经理", "原型", "感觉式编程", "硅谷", "岗位变化"],
+      "keywords": [
+        "产品经理",
+        "原型",
+        "感觉式编程",
+        "硅谷",
+        "岗位变化"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI编程工具改变了什么",
@@ -336,7 +467,10 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["岗位案例", "硅谷实践"],
+      "style_tags": [
+        "岗位案例",
+        "硅谷实践"
+      ],
       "summary_short": "硅谷产品经理现在自己用AI写代码出原型，从等团队数月的'指挥家'变成了独立闭环的角色"
     },
     {
@@ -360,7 +494,13 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A给出了一个极其具体、可操作的行动建议，且打破了'必须学计算机科学'的心理障碍",
-      "keywords": ["引路人", "年轻人", "代际学习", "AI入门", "心理障碍"],
+      "keywords": [
+        "引路人",
+        "年轻人",
+        "代际学习",
+        "AI入门",
+        "心理障碍"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI时代的个人成长/职业规划",
@@ -373,7 +513,10 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["可操作建议", "情感共鸣"],
+      "style_tags": [
+        "可操作建议",
+        "情感共鸣"
+      ],
       "summary_short": "嘉宾A建议焦虑的职场人找身边的年轻人（<25岁）做AI引路人，打破'必须懂技术'的心理障碍"
     },
     {
@@ -397,7 +540,14 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾B从个人创业经历中提炼出一个对主流社会价值观的深刻批判，且有自己的故事做支撑",
-      "keywords": ["能动性", "赞美", "社会价值观", "不可能", "创业者", "独立思考"],
+      "keywords": [
+        "能动性",
+        "赞美",
+        "社会价值观",
+        "不可能",
+        "创业者",
+        "独立思考"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI时代的个人成长/职业规划",
@@ -410,7 +560,10 @@
         "needs_human_judgment": true,
         "flag_reason": "对主流社会价值观的直接批判，可能引发争议。建议编辑根据目标读者调整表述力度"
       },
-      "style_tags": ["价值批判", "个人叙事"],
+      "style_tags": [
+        "价值批判",
+        "个人叙事"
+      ],
       "summary_short": "嘉宾B认为真正的能动性是对'追求赞美'社会价值观的拒绝——你该追逐的不是表扬，是别人认为不可能的事"
     },
     {
@@ -429,11 +582,18 @@
       ],
       "confidence": "medium",
       "confidence_reason": "嘉宾B引用了具体数字但未说明研究来源，'终生收入下降1/5'和'死亡率翻倍'是非常强的论断",
-      "keywords": ["不适应", "终生收入", "死亡率", "计算机", "电子表格", "历史教训"],
+      "keywords": [
+        "不适应",
+        "终生收入",
+        "死亡率",
+        "计算机",
+        "电子表格",
+        "历史教训"
+      ],
       "hotspot_match": {
         "matched": true,
         "hotspot_topic": "AI会取代哪些工作/白领失业",
-        "relevance_score": 0.90,
+        "relevance_score": 0.9,
         "match_reason": "用历史数据（计算机/电子表格时代）类比AI时代，给回避AI的人发出了最强烈的警示"
       },
       "editorial_flags": {
@@ -442,7 +602,10 @@
         "needs_human_judgment": true,
         "flag_reason": "涉及'终生收入下降1/5'和'死亡率翻倍'的强论断，必须核实原始研究；表述可能引发读者恐惧，需编辑控制语气"
       },
-      "style_tags": ["数据警示", "历史类比"],
+      "style_tags": [
+        "数据警示",
+        "历史类比"
+      ],
       "summary_short": "嘉宾B引用计算机时代的历史数据警告：不适应新技术的人终生收入下降超20%，第一年死亡率翻倍"
     },
     {
@@ -461,7 +624,14 @@
       ],
       "confidence": "high",
       "confidence_reason": "嘉宾A分享的是具体个人体验，不涉及需要核实的外部事实",
-      "keywords": ["叠衣服", "AI对话", "家务", "学习", "生活场景", "私人时间"],
+      "keywords": [
+        "叠衣服",
+        "AI对话",
+        "家务",
+        "学习",
+        "生活场景",
+        "私人时间"
+      ],
       "hotspot_match": {
         "matched": false,
         "hotspot_topic": "",
@@ -474,8 +644,18 @@
         "needs_human_judgment": false,
         "flag_reason": ""
       },
-      "style_tags": ["生活化场景", "个人故事"],
-      "summary_short": "嘉宾A把周末叠衣服的时间变成了和AI对话学习的'私人专属时间'，家务变成了学习机会"
+      "style_tags": [
+        "生活化场景",
+        "个人故事"
+      ],
+      "summary_short": "嘉宾A把周末叠衣服的时间变成了和AI对话学习的'私人专属时间'，家务变成了学习机会",
+      "case": {
+        "background": "嘉宾A周末在家做家务",
+        "action": "一边叠衣服一边和AI就深奥话题对话",
+        "result": "家务时间变成私人专属学习时间，反而更有动力叠衣服（主观体验，无量化结果）",
+        "completeness": "partial",
+        "evidence": "我意识到我可以一边叠衣服，一边和AI就一个深奥的话题进行对话。"
+      }
     }
   ]
 }

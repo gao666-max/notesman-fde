@@ -39,6 +39,27 @@ causalChain结构：
 
 missingSteps字段是关键——它不是指出嘉宾观点的缺陷，而是标注"AI在提取时是否漏掉了推理步骤"。如果嘉宾的推理是完整的，missingSteps写空数组[]。
 
+## 观点间关系提取（relations，逻辑链）
+
+观点不是孤立的——嘉宾的论证往往是一个观点推导出另一个。提取完观点后，为有明确逻辑关系的观点对添加 relations，把"扁平列表"变成"逻辑链"：
+
+- **causal（因果）**：vp_A 是 vp_B 的前提/原因——"因为A，所以B"跨观点的推导关系
+- **progressive（递进）**：vp_B 是 vp_A 的深化/延伸——同一话题的层层递进（先讲现象，再讲机制，再讲怎么办）
+- **contrast（对比）**：vp_B 与 vp_A 构成对立或张力——两位嘉宾观点冲突，或同一嘉宾的"反常识"对照
+
+要求：**至少 3 对 relations**，只标注逐字稿中明确可判断的关系，不要硬凑。每对格式：{"targetId":"vp_XX","type":"causal|progressive|contrast","reason":"关系说明（1句）"}
+
+## 案例提取（case）
+
+商业内容最有说服力的部分是案例，但案例不能只当"证据引用"用。识别嘉宾提到的具体案例（公司实践、个人经历、行业事件），单独建模并标注完整性：
+
+- **background**：背景（当事人是谁、什么处境）
+- **action**：行动（做了什么）
+- **result**：结果（带来了什么变化）
+- **completeness**：三要素齐全=complete；缺一个=partial；只言片语无法成案=unknown
+
+要求：**至少 3 个观点带 case**。只有明确的案例叙述才提取；泛泛举例（"比如很多公司都这样"）填null。
+
 ## 置信度标准（影响后续编辑决策，请严格判断）
 
 - **high（85-95分）**：原文可逐句回溯，嘉宾表述清晰，有具体例子或数据。"嘉宾A说'我自己用AI重写了整个CEO工具栈'"
@@ -68,6 +89,8 @@ weakSignals：2-5个嘉宾提过但未展开的弱信号话题。
 - evidenceQuotes里每条text必须是从SRT中原样摘录的原文（含完整时间戳）
 - counterpoint字段：如果同场另一位嘉宾对此观点有不同看法，填写{ speaker:"说话人", summary:"不同意见摘要" }，没有则填null
 - causalChain字段：大多数观点都包含因果推理。请为至少5个观点提取因果链。只有纯事实陈述或纯建议才填null。格式：{ premise:"前提", reasoning:"推理过程", conclusion:"结论", evidence:[{segment:"说话人 时间戳", text:"原文"}], missingSteps:["推理链断点"] }
+- relations字段：观点间的逻辑关系（逻辑链），每个观点最多2条。格式：[{"targetId":"vp_XX","type":"causal|progressive|contrast","reason":"关系说明"}]。没有则填[]。请为至少3对观点建立关系。
+- case字段：案例独立建模。格式：{ background:"背景", action:"行动", result:"结果", completeness:"complete|partial|unknown", evidence:"支撑案例的原文摘录" }。没有明确案例则填null。请为至少3个观点提取案例。
 - 不要在JSON后面加任何文字`
 
 const USER_TEMPLATE = `下面是访谈逐字稿（SRT格式，每段带说话人和时间戳）：

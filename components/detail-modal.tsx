@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Quote, AlertTriangle, Zap, Flame, CheckCircle, BookOpen, Link2, AlertCircle } from "lucide-react"
+import { X, Quote, AlertTriangle, Zap, Flame, CheckCircle, BookOpen, Link2, AlertCircle, GitBranch, Briefcase } from "lucide-react"
 import type { Viewpoint } from "@/lib/types"
 import { levelBadgeClass, levelDotBg, levelLabel, isHot } from "@/lib/viewpoint-utils"
 import { cn } from "@/lib/utils"
@@ -10,9 +10,16 @@ interface DetailModalProps {
   open: boolean
   onClose: () => void
   srtContext?: {ts: string; speaker: string; text: string}[]
+  allViewpoints?: Viewpoint[]
 }
 
-export function DetailModal({ vp, open, onClose, srtContext }: DetailModalProps) {
+const RELATION_LABEL: Record<string, string> = {
+  causal: "推导",
+  progressive: "深化",
+  contrast: "对比",
+}
+
+export function DetailModal({ vp, open, onClose, srtContext, allViewpoints }: DetailModalProps) {
   if (!open) return null
 
   const f = vp.editorialFlags
@@ -116,6 +123,63 @@ export function DetailModal({ vp, open, onClose, srtContext }: DetailModalProps)
               <p className="text-sm">
                 <span className="font-medium">{vp.counterpoint.speaker}</span>对此有不同看法：{vp.counterpoint.summary}
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Case Analysis（案例独立建模） */}
+        {vp.case && (
+          <div className="mt-4">
+            <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Briefcase className="size-3.5" /> 案例
+              <span className={cn(
+                "ml-auto rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                vp.case.completeness === "complete" ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"
+                : vp.case.completeness === "partial" ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400"
+                : "border-slate-300 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+              )}>
+                {vp.case.completeness === "complete" ? "三要素完整" : vp.case.completeness === "partial" ? "要素不全·需编辑补" : "仅只言片语"}
+              </span>
+            </h4>
+            <div className="space-y-1.5 rounded-lg border border-emerald-200 bg-emerald-50/40 px-3.5 py-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+              {vp.case.background && <div className="text-sm"><span className="font-medium text-emerald-700 dark:text-emerald-400">背景</span> <span className="text-muted-foreground">{vp.case.background}</span></div>}
+              {vp.case.action && <div className="text-sm"><span className="font-medium text-emerald-700 dark:text-emerald-400">行动</span> <span className="text-muted-foreground">{vp.case.action}</span></div>}
+              {vp.case.result && <div className="text-sm"><span className="font-medium text-emerald-700 dark:text-emerald-400">结果</span> <span className="text-muted-foreground">{vp.case.result}</span></div>}
+              {vp.case.evidence && (
+                <div className="mt-1.5 border-t border-emerald-200 pt-1.5 text-xs text-muted-foreground dark:border-emerald-900">
+                  <span className="font-medium">原文：</span>"{vp.case.evidence}"
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Relations（观点间逻辑关系） */}
+        {vp.relations && vp.relations.length > 0 && (
+          <div className="mt-4">
+            <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <GitBranch className="size-3.5" /> 逻辑链
+            </h4>
+            <div className="space-y-1.5">
+              {vp.relations.map((rel, i) => {
+                const target = allViewpoints?.find(v => v.id === rel.targetId)
+                return (
+                  <div key={i} className="flex items-start gap-2 rounded-lg border px-3 py-2 text-sm">
+                    <span className={cn(
+                      "mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                      rel.type === "causal" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                      : rel.type === "progressive" ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    )}>
+                      {RELATION_LABEL[rel.type] ?? rel.type}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-medium">{target ? target.title : rel.targetId}</div>
+                      <div className="text-xs text-muted-foreground">{rel.reason}</div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

@@ -34,7 +34,8 @@ export const VIEWPOINTS: Viewpoint[] = [
     confidenceReason: "嘉宾A在开场和结尾两次独立强调此观点，表述清晰、有明确的价值判断",
     hotspotMatch: { matched: true, topic: "AI时代的个人成长/职业规划", score: 0.92, reason: "重新定义企业家精神为个人能动性，对职业焦虑有直接回应" },
     editorialFlags: { factCheckNeeded: false, sensitiveContent: false, needsHumanJudgment: false, flagReason: "" },
-    styleTags: ["概念重构","金句型"]
+    styleTags: ["概念重构","金句型"],
+    relations: [{ targetId: "vp_11", type: "progressive", reason: "把'企业家=能动性'的定义进一步深化到社会价值观层面" }]
   },
   {
     id: "vp_02", title: "工业革命从未自动化劳动",
@@ -49,7 +50,11 @@ export const VIEWPOINTS: Viewpoint[] = [
     confidenceReason: "嘉宾A用历史事实反驳了常见叙事，论证完整且有学术支撑",
     hotspotMatch: { matched: true, topic: "AI会取代哪些工作/白领失业", score: 0.95, reason: "直接反驳'AI=工业革命式自动化'的流行类比" },
     editorialFlags: { factCheckNeeded: true, sensitiveContent: false, needsHumanJudgment: true, flagReason: "涉及对'工业革命'的历史定性判断，建议编辑核实" },
-    styleTags: ["反常识纠偏","历史类比"]
+    styleTags: ["反常识纠偏","历史类比"],
+    relations: [
+      { targetId: "vp_12", type: "causal", reason: "工业革命从未自动化劳动而是改变技能结构——这正是今天不适应新技术者收入下降的历史原因" },
+      { targetId: "vp_06", type: "contrast", reason: "嘉宾A的理性历史视角与公共讨论的极端叙事形成张力" }
+    ]
   },
   {
     id: "vp_03", title: "CEO自己写代码重构工具栈",
@@ -64,7 +69,15 @@ export const VIEWPOINTS: Viewpoint[] = [
     confidenceReason: "嘉宾B提供了具体个人经验——CEO工具栈全部自建、待办事项App的自动清理规则",
     hotspotMatch: { matched: true, topic: "AI编程工具改变了什么", score: 0.90, reason: "CEO亲自用AI编程构建完整工具栈，是'赋能非开发者'的最强案例" },
     editorialFlags: { factCheckNeeded: false, sensitiveContent: false, needsHumanJudgment: false, flagReason: "" },
-    styleTags: ["具体案例","个人叙事"]
+    styleTags: ["具体案例","个人叙事"],
+    relations: [{ targetId: "vp_09", type: "causal", reason: "CEO自建工具栈证明AI编程门槛已消失，产品经理因此不再等团队出原型" }],
+    case: {
+      background: "嘉宾B是一位CEO，管理整个公司但坚持亲自动手",
+      action: "用AI编程工具自建了整套CEO工具栈，包括待办事项应用",
+      result: "应用开发成本从几个月降到一个周末，效率大幅提升",
+      completeness: "complete",
+      evidence: "我的整个CEO工具栈里全是我自己构建的应用。"
+    }
   },
   {
     id: "vp_04", title: "解锁员工：陪走一遍比视频有效",
@@ -79,7 +92,14 @@ export const VIEWPOINTS: Viewpoint[] = [
     confidenceReason: "嘉宾B提供了可操作的步骤和个人观察，有明确的因果关系链",
     hotspotMatch: { matched: true, topic: "AI时代的个人成长/职业规划", score: 0.82, reason: "给出了组织内推动AI的具体方法论" },
     editorialFlags: { factCheckNeeded: false, sensitiveContent: false, needsHumanJudgment: false, flagReason: "" },
-    styleTags: ["可操作步骤","组织管理"]
+    styleTags: ["可操作步骤","组织管理"],
+    case: {
+      background: "嘉宾B的团队引入AI工具",
+      action: "坐下来和员工两三人一组，一步步带他们走完深度研究等基本任务",
+      result: "员工仿佛解开了某个结，之后能自己翱翔（未给出可量化结果）",
+      completeness: "partial",
+      evidence: "我陪着他们一起做的这个过程，有某种东西，之后仿佛解开了某个结"
+    }
   },
   {
     id: "vp_05", title: "空间智能：AI拼图缺失的一块",
@@ -138,7 +158,8 @@ export const VIEWPOINTS: Viewpoint[] = [
     confidenceReason: "嘉宾B提出了一个清晰的分析框架并用具体职业案例做了说明",
     hotspotMatch: { matched: true, topic: "AI会取代哪些工作/白领失业", score: 0.94, reason: "理解AI时代职业分化的原创框架" },
     editorialFlags: { factCheckNeeded: false, sensitiveContent: false, needsHumanJudgment: true, flagReason: "预测性框架而非已证实规律，建议标注为'假设'而非结论" },
-    styleTags: ["原创框架","比喻式"]
+    styleTags: ["原创框架","比喻式"],
+    relations: [{ targetId: "vp_12", type: "causal", reason: "杠铃效应让中间层消失，水平一般的通才正是收入受冲击的那批人" }]
   },
   {
     id: "vp_09", title: "产品经理不再等团队出原型",
@@ -211,7 +232,14 @@ export const VIEWPOINTS: Viewpoint[] = [
     confidenceReason: "嘉宾A分享的是具体个人体验，不涉及需要核实的外部事实",
     hotspotMatch: { matched: false, topic: "", score: 0, reason: "" },
     editorialFlags: { factCheckNeeded: false, sensitiveContent: false, needsHumanJudgment: false, flagReason: "" },
-    styleTags: ["生活化场景","个人故事"]
+    styleTags: ["生活化场景","个人故事"],
+    case: {
+      background: "嘉宾A周末在家做家务",
+      action: "一边叠衣服一边和AI就深奥话题对话",
+      result: "家务时间变成私人专属学习时间，反而更有动力叠衣服（主观体验，无量化结果）",
+      completeness: "partial",
+      evidence: "我意识到我可以一边叠衣服，一边和AI就一个深奥的话题进行对话。"
+    }
   }
 ]
 
