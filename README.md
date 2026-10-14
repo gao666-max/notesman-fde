@@ -7,6 +7,20 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)](https://www.typescriptlang.org)
 [![DeepSeek](https://img.shields.io/badge/LLM-DeepSeek-0050FF.svg)](https://deepseek.com)
 
+## 界面预览
+
+**整体界面** — 作品展示：逐字稿 → 观点卡片 → 文章草稿
+
+![整体界面](screenshots/01-overview.png)
+
+**抽屉卡片** — 按热点分类，卡片排置信度
+
+![抽屉卡片](screenshots/02-card-drawer.png)
+
+**拖拽生成** — 拖拽观点卡片即可生成文章
+
+![拖拽生成文章](screenshots/03-drag-generate.png)
+
 ---
 
 ## 📌 Problem（背景与问题）
